@@ -1,0 +1,14 @@
+*.iml
+.gradle/
+.kotlin/
+local.properties
+.idea/
+.DS_Store
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+# 产物按版本归档在 dist/，但 APK 体积大，不进版本库；
+# 校验值与说明见 ARCHIVE.md
+*.apk
+*.aab
