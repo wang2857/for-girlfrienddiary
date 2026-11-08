@@ -28,6 +28,12 @@ data class BackupInfo(
     val backgroundCount: Int = 0,
 )
 
+/** 备份包的元信息，导入前用来决定要不要问恢复码。 */
+data class BackupInspection(
+    val schemaVersion: Int,
+    val needsRecoveryCode: Boolean,
+)
+
 /** 合并导入的结果。 */
 data class MergeInfo(
     val added: Int,
@@ -47,6 +53,8 @@ class BackupManager(
     private val database: AppDatabase,
     private val imageStore: ImageStore,
     private val dbPassphrase: String,
+    /** 恢复码（明文）。有的话，导出时用它把数据库口令再封一份放进包里，换机才解得开。 */
+    private val recoveryCodeProvider: () -> String?,
 ) {
 
     private val dbFile: File get() = context.getDatabasePath(DB_NAME)
@@ -94,6 +102,8 @@ class BackupManager(
             imageCount = images.size,
             backgroundCount = backgrounds.size,
         )
+        // 跨设备备份：把数据库口令用恢复码包一份放进包里；没有恢复码就只做本机备份
+        val keyBlob = recoveryCodeProvider()?.let { code -> BackupKey.wrap(dbPassphrase, code) }
 
         ZipOutputStream(out.buffered()).use { zip ->
             zip.putNextEntry(ZipEntry(MANIFEST))
@@ -105,6 +115,7 @@ class BackupManager(
                     .put("imageCount", info.imageCount)
                     .put("backgroundCount", info.backgroundCount)
                     .put("encrypted", true)
+                    .put("keyWrap", if (keyBlob != null) "recovery" else "device")
                     .toString()
                     .toByteArray(),
             )
@@ -125,12 +136,35 @@ class BackupManager(
                 imageStore.backgroundFile(name).inputStream().use { it.copyTo(zip) }
                 zip.closeEntry()
             }
+
+            if (keyBlob != null) {
+                zip.putNextEntry(ZipEntry(KEY_FILE))
+                zip.write(keyBlob)
+                zip.closeEntry()
+            }
         }
         return info
     }
 
-    /** 导入：解压到临时目录 → 校验 → 关库 → 覆盖文件。调用方负责重启应用。 */
-    suspend fun import(uri: Uri): Result<BackupInfo> = withContext(Dispatchers.IO) {
+    /** 只看一眼备份包：版本、以及是不是需要恢复码。 */
+    suspend fun inspect(uri: Uri): Result<BackupInspection> = withContext(Dispatchers.IO) {
+        runCatching {
+            val staging = unzipToStaging(uri)
+            val manifest = File(staging, MANIFEST)
+            require(manifest.exists()) { "不是有效的备份包（缺少清单）" }
+            val json = JSONObject(manifest.readText())
+            BackupInspection(
+                schemaVersion = json.optInt("schemaVersion", 0),
+                needsRecoveryCode = File(staging, KEY_FILE).exists(),
+            )
+        }
+    }
+
+    /**
+     * 导入：解压到临时目录 → 校验 → （跨设备备份先换成本机口令）→ 关库 → 覆盖文件。
+     * 调用方负责重启应用。
+     */
+    suspend fun import(uri: Uri, recoveryCode: String? = null): Result<BackupInfo> = withContext(Dispatchers.IO) {
         runCatching {
             val staging = unzipToStaging(uri)
             val db = File(staging, DB_NAME)
@@ -161,6 +195,16 @@ class BackupManager(
                 imageCount = json.optInt("imageCount", 0),
                 backgroundCount = json.optInt("backgroundCount", 0),
             )
+
+            // 跨设备备份：包里带着用恢复码封起来的口令，先解开、把库改成这台手机的口令
+            val keyFile = File(staging, KEY_FILE)
+            if (keyFile.exists()) {
+                val code = recoveryCode?.trim().orEmpty()
+                require(code.isNotEmpty()) { "这个备份来自别的设备，需要恢复码才能解开" }
+                val backupPassphrase = BackupKey.unwrap(keyFile.readBytes(), code)
+                    ?: error("恢复码不对，解不开这个备份")
+                rekeyBackupDatabase(db, backupPassphrase)
+            }
 
             // 关库再覆盖，否则 Room 的打开连接会写回旧页
             database.close()
@@ -249,6 +293,22 @@ class BackupManager(
         }
     }
 
+    /** 把备份库的加密口令换成本机的，之后才能直接放回 databases/。 */
+    private fun rekeyBackupDatabase(file: File, backupPassphrase: String) {
+        val db = net.zetetic.database.sqlcipher.SQLiteDatabase.openDatabase(
+            file.path,
+            backupPassphrase,
+            null,
+            net.zetetic.database.sqlcipher.SQLiteDatabase.OPEN_READWRITE,
+            null,
+        )
+        try {
+            db.rawExecSQL("PRAGMA rekey = '$dbPassphrase'")
+        } finally {
+            db.close()
+        }
+    }
+
     // ---- 解包与读源库 ----
 
     /** 解压到 cache/restore（目录穿越只放行白名单内的路径）。 */
@@ -265,6 +325,7 @@ class BackupManager(
                     val target = when {
                         name == MANIFEST -> File(staging, MANIFEST)
                         name == DB_NAME -> File(staging, DB_NAME)
+                        name == KEY_FILE -> File(staging, KEY_FILE)
                         name.startsWith("$IMAGE_DIR/") && !name.contains("..") -> File(staging, name)
                         name.startsWith("$BACKGROUND_DIR/") && !name.contains("..") -> File(staging, name)
                         else -> null
@@ -426,6 +487,7 @@ class BackupManager(
         const val MIN_BACKUP_SCHEMA = 8
         const val DB_NAME = "diary.db"
         const val MANIFEST = "manifest.json"
+        const val KEY_FILE = "key.bin"
         const val IMAGE_DIR = "images"
         const val BACKGROUND_DIR = "backgrounds"
         const val PREFIX_CUSTOM = "img:"

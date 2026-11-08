@@ -56,7 +56,10 @@ class AppContainer(context: Context) {
 
     val editorSettings = EditorSettings(appContext)
 
-    val backupManager = BackupManager(appContext, database, imageStore, dbPassphrase)
+    val backupManager = BackupManager(appContext, database, imageStore, dbPassphrase) {
+        // 恢复码的明文存在 Keystore 封装的副本里，导出时用它包口令（跨设备备份）
+        lockManager.revealRecoveryCode()
+    }
 
     /**
      * 选完文件到确认导入之间会经历"切后台 → 应用锁上锁 → 回来重建界面"，

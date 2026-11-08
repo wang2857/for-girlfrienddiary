@@ -69,7 +69,7 @@ fun SettingsScreen(
     onDisableLock: () -> Unit,
     onOpenTrash: () -> Unit,
     onExport: (android.net.Uri, () -> Unit) -> Unit,
-    onImport: (android.net.Uri, () -> Unit) -> Unit,
+    onImport: (android.net.Uri, String?, () -> Unit) -> Unit,
     onMergeImport: (android.net.Uri, () -> Unit) -> Unit,
     pendingImport: kotlinx.coroutines.flow.StateFlow<android.net.Uri?>,
     onPickImport: (android.net.Uri) -> Unit,
@@ -135,6 +135,9 @@ fun SettingsScreen(
 
     val pending by pendingImport.collectAsState()
     var busy by remember { mutableStateOf<String?>(null) }
+    // 跨设备备份要先知道"要不要问恢复码"，所以选中文件后先 inspect 一眼
+    var needsRecoveryCode by remember { mutableStateOf(false) }
+    var recoveryInput by remember { mutableStateOf("") }
     val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/zip"),
     ) { uri ->
@@ -159,6 +162,13 @@ fun SettingsScreen(
             busy = "正在合并…"
             onMergeImport(uri) { busy = null }
         }
+    }
+
+    androidx.compose.runtime.LaunchedEffect(pending) {
+        val uri = pending ?: return@LaunchedEffect
+        needsRecoveryCode = container.backupManager.inspect(uri)
+            .getOrNull()?.needsRecoveryCode == true
+        recoveryInput = ""
     }
 
     // 选完文件先弹确认框（覆盖是破坏性操作），确认后才真正导入
@@ -426,15 +436,40 @@ fun SettingsScreen(
     pending?.let { uri ->
         AlertDialog(
             onDismissRequest = onClearPendingImport,
-            title = { Text("用备份覆盖本机数据？") },
-            text = { Text("现有的日记和图片会被备份包里的内容替换，且无法撤销。应用会自动重启。") },
+            title = { Text(if (needsRecoveryCode) "从别的设备恢复？" else "用备份覆盖本机数据？") },
+            text = {
+                Column {
+                    Text(
+                        if (needsRecoveryCode) {
+                            "这个备份不是本机导出的，里面的数据库口令用恢复码封着。" +
+                                "输入当初抄下的 16 位恢复码，恢复后就会换成本机口令。"
+                        } else {
+                            "现有的日记和图片会被备份包里的内容替换，且无法撤销。应用会自动重启。"
+                        },
+                    )
+                    if (needsRecoveryCode) {
+                        Spacer(Modifier.height(10.dp))
+                        OutlinedTextField(
+                            value = recoveryInput,
+                            onValueChange = { recoveryInput = it.take(40) },
+                            label = { Text("恢复码") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            },
             confirmButton = {
-                TextButton(onClick = {
-                    onClearPendingImport()
-                    busy = "正在导入…"
-                    // 成功会重启应用；失败时必须把 busy 清掉，否则整页按钮全被卡住
-                    onImport(uri) { busy = null }
-                }) { Text("覆盖导入") }
+                TextButton(
+                    enabled = !needsRecoveryCode || recoveryInput.isNotBlank(),
+                    onClick = {
+                        onClearPendingImport()
+                        busy = "正在导入…"
+                        // 成功会重启应用；失败时必须把 busy 清掉，否则整页按钮全被卡住
+                        onImport(uri, recoveryInput.takeIf { needsRecoveryCode }) { busy = null }
+                        recoveryInput = ""
+                    },
+                ) { Text(if (needsRecoveryCode) "解密并恢复" else "覆盖导入") }
             },
             dismissButton = {
                 TextButton(onClick = onClearPendingImport) { Text("取消") }
