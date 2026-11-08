@@ -276,3 +276,10 @@ APK 从 13 MB 涨到约 17 MB（字体占 3.4 MB）。
 - 现在 `PaperBackdrop` 包在 `Scaffold` 外面并铺满整页，`containerColor` 和顶栏都改成透明，
   底色 / 花纹 / 照片一路铺到状态栏
 - 默认纸面没变化；变的是有色纸和照片背景的沉浸感
+
+## 0.31.2 — 编辑页顶栏换成图标按钮
+
+- 「返回」「保存」两个文字按钮换成 `IconButton`：`←`（`Icons.AutoMirrored.Filled.ArrowBack`）和 `✓`（`Icons.Default.Check`）
+- 顶栏因此不再有文字基线，视觉上更轻；`contentDescription` 保留「返回」「保存」，无障碍和读屏不受影响
+- 引入 `androidx.compose.material:material-icons-core`（BOM 管版本，只带常用图标，体积增加可忽略）
+- 顺带把箭头做成 AutoMirrored：以后要做 RTL 语言时方向会自动翻

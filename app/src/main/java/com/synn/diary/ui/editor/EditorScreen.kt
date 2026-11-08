@@ -33,6 +33,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -40,6 +43,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -231,10 +236,15 @@ fun EditorScreen(
                 title = {},
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 navigationIcon = {
-                    TextButton(onClick = onBack) { Text("返回") }
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "返回",
+                        )
+                    }
                 },
                 actions = {
-                    TextButton(
+                    IconButton(
                         enabled = !showSavedHint,
                         onClick = {
                             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -247,7 +257,12 @@ fun EditorScreen(
                                 }
                             }
                         },
-                    ) { Text("保存") }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "保存",
+                        )
+                    }
                 },
 
             )
