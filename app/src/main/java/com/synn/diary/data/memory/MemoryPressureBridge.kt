@@ -83,6 +83,15 @@ class MemoryPressureBridge(private val context: Context) {
         Log.i(TAG, "memory pressure bridge initialized")
     }
 
+    /** 反注册并把线程停掉；测试里会建多个 container。 */
+    fun stop() {
+        if (registered) {
+            runCatching { context.unregisterReceiver(receiver) }
+            registered = false
+        }
+        thread.quitSafely()
+    }
+
     private fun releaseMemory() {
         // 图片缓存是这类应用里最大的一块；清掉后重启加载会重新解码，代价可接受
         runCatching { SingletonImageLoader.get(context).memoryCache?.clear() }

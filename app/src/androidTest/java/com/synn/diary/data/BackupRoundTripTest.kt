@@ -3,7 +3,7 @@ package com.synn.diary.data
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.synn.diary.DiaryApp
+import com.synn.diary.data.AppContainer
 import java.io.File
 import java.util.UUID
 import java.util.zip.ZipFile
@@ -25,7 +25,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class BackupRoundTripTest {
 
-    private lateinit var app: DiaryApp
+    private lateinit var app: android.content.Context
+    private lateinit var container: AppContainer
     private lateinit var zip: File
     private val imageName = "roundtrip-${UUID.randomUUID()}.jpg"
     private val fontName = "roundtrip-${UUID.randomUUID()}.ttf"
@@ -33,24 +34,27 @@ class BackupRoundTripTest {
     @Before
     fun setUp() {
         app = ApplicationProvider.getApplicationContext()
+        container = AppContainer(app)
         zip = File(app.cacheDir, "roundtrip-${UUID.randomUUID()}.zip")
         zip.delete()
     }
 
     @After
-    fun tearDown() { runBlocking {
-        val repo = app.container.entryRepository
-        repo.timeline(limit = 500).first()
-            .filter { it.entry.title == TITLE }
-            .forEach { repo.purge(it.entry.id) }
-        app.container.imageStore.file(imageName).delete()
-        app.container.fontStore.file(fontName).delete()
-        zip.delete()
-    } }
+    fun tearDown() {
+        runBlocking {
+            val repo = container.entryRepository
+            repo.timeline(limit = 500).first()
+                .filter { it.entry.title == TITLE }
+                .forEach { repo.purge(it.entry.id) }
+            container.imageStore.file(imageName).delete()
+            container.fontStore.file(fontName).delete()
+            zip.delete()
+        }
+        container.close()
+    }
 
     @Test
     fun `导出后删除再合并，正文图片字体都回来`() = runBlocking {
-        val container = app.container
         val repo = container.entryRepository
 
         // 造素材：一张图、一个字体文件（内容不重要，测的是搬运）

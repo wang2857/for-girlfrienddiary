@@ -15,6 +15,7 @@ import com.synn.diary.data.lock.LockStore
 import com.synn.diary.data.memory.MemoryPressureBridge
 import com.synn.diary.data.weather.WeatherService
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
@@ -97,4 +98,11 @@ class AppContainer(context: Context) {
      * 但最后一笔内容必须落库，所以这里用 Application 级的 scope 兜底。
      */
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /** 给测试用：关掉库、取消后台作用域，避免多个 container 同时开着同一个库。 */
+    fun close() {
+        appScope.cancel()
+        database.close()
+        memoryPressureBridge.stop()
+    }
 }

@@ -525,3 +525,12 @@ APK 从 13 MB 涨到约 17 MB（字体占 3.4 MB）。
 - `FullTextIndex.install` 不再"装过一次就永远跳过"：每个库都建自己的 `entry_fts`（测试里会开多个库）
 - 测试基建：Robolectric 的 `user.home`/本地仓库重定向到 `build/`（沙盒里 `~` 不可写）；
   测试 Application 换成空的 `android.app.Application`，避开真实的 Keystore/SQLCipher 初始化
+
+## 1.0.4 — 覆盖导入的往返测试
+
+- 新增 `ImportRoundTripTest`：建一条带图片和自定义字体的日记 → 导出 → **再写一条** →
+  整包覆盖导入 → 断言快照里的日记和附件都回来了、导出之后写的那条消失（证明是覆盖不是合并）
+- 这条测试按约定**会重置本机应用数据**，所以每个测试类自己建 `AppContainer`，
+  跑完清理测试数据；`AppContainer` 增加 `close()`（关库 + 停后台作用域 + 反注册内存压力广播），
+  避免多个 container 同时开着同一个库
+- 仪器测试从 3 个用例涨到 4 个

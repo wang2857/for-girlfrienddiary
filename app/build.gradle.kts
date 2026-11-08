@@ -15,8 +15,8 @@ android {
         applicationId = "com.synn.diary"
         minSdk = 26
         targetSdk = 36
-        versionCode = 75
-        versionName = "1.0.3"
+        versionCode = 76
+        versionName = "1.0.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
