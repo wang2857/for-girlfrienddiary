@@ -46,6 +46,9 @@ class EntryRepository(
 
     fun trash(): Flow<List<EntryWithTags>> = entryDao.observeTrash()
 
+    /** 当天有没有写过（空条目不算）。 */
+    suspend fun hasEntryOn(epochDay: Long): Boolean = entryDao.countOnDay(epochDay) > 0
+
     suspend fun restore(id: Long) = entryDao.restore(id)
 
     /** 彻底删除：先清掉图片文件，再删行（行删掉后 entry_tag / attachment 由外键级联清理）。 */

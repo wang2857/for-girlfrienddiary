@@ -6,6 +6,8 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
@@ -60,6 +62,16 @@ fun DiaryNavHost(container: AppContainer) {
 
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("diary_prefs", Context.MODE_PRIVATE) }
+
+    // 从每日提醒点进来：直接开一篇新的
+    val pendingNewEntry by container.pendingNewEntry.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingNewEntry) {
+        if (pendingNewEntry) {
+            container.pendingNewEntry.value = false
+            val id = container.entryRepository.create()
+            navController.navigate("editor/$id")
+        }
+    }
 
     // 所有"打开某篇日记"的入口都走这里：时间线、日历、搜索都一样。
     // 上锁的条目必须先验指纹或密码，不能从别的入口绕过去。

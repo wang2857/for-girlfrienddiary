@@ -1,5 +1,14 @@
 package com.synn.diary.ui.settings
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import android.widget.Toast
+import com.synn.diary.notify.DailyReminder
+import com.synn.diary.notify.ReminderScheduler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -53,6 +62,18 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val lockEnabled by lockManager.enabled.collectAsStateWithLifecycle()
+    var reminderOn by remember { mutableStateOf(DailyReminder.isEnabled(context)) }
+    val notifyPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) {
+            ReminderScheduler.setEnabled(context, true)
+            reminderOn = true
+        } else {
+            reminderOn = false
+            Toast.makeText(context, "没有通知权限，提醒发不出来", Toast.LENGTH_LONG).show()
+        }
+    }
 
     var showSetPin by remember { mutableStateOf(false) }
     val pending by pendingImport.collectAsState()
@@ -133,6 +154,51 @@ fun SettingsScreen(
 
             Spacer(Modifier.height(20.dp))
             Text(
+                text = "提醒",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(Modifier.height(4.dp))
+            SettingSwitchRow(
+                title = "每日提醒",
+                subtitle = if (reminderOn) "每天 21:00，当天还没写才提醒一次" else "关着，不会打扰",
+                checked = reminderOn,
+                onCheckedChange = { checked ->
+                    if (!checked) {
+                        ReminderScheduler.setEnabled(context, false)
+                        reminderOn = false
+                    } else if (DailyReminder.canNotify(context)) {
+                        ReminderScheduler.setEnabled(context, true)
+                        reminderOn = true
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.POST_NOTIFICATIONS,
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        Toast.makeText(context, "系统里这个应用的通知被关掉了，先在系统设置里打开", Toast.LENGTH_LONG).show()
+                    }
+                },
+            )
+            if (reminderOn) {
+                SettingActionRow(
+                    title = "试一下提醒",
+                    subtitle = "立刻发一条，看看长什么样",
+                    actionLabel = "发送",
+                    onClick = {
+                        if (DailyReminder.canNotify(context)) {
+                            DailyReminder.notify(context)
+                        } else {
+                            Toast.makeText(context, "没有通知权限", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                )
+            }
+
+            Spacer(Modifier.height(20.dp))
+            Text(
                 text = "数据",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
@@ -177,7 +243,7 @@ fun SettingsScreen(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "日记 0.25.0 · 本地存储 · 不上传",
+                text = "日记 0.26.0 · 本地存储 · 不上传",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -59,6 +59,9 @@ class AppContainer(context: Context) {
      */
     var externalUiInProgress = false
 
+    /** 用户从每日提醒点进来：解锁后直接开一篇新日记。 */
+    val pendingNewEntry = MutableStateFlow(false)
+
     val entryRepository = EntryRepository(
         entryDao = database.entryDao(),
         tagDao = database.tagDao(),

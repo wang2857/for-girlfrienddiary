@@ -130,6 +130,15 @@ interface EntryDao {
     @Query("SELECT body FROM entry")
     suspend fun allBodies(): List<String>
 
+    @Query(
+        """
+        SELECT count(*) FROM entry
+        WHERE deletedAt IS NULL AND entryDate = :epochDay
+          AND (length(trim(title)) > 0 OR length(trim(body)) > 0)
+        """,
+    )
+    suspend fun countOnDay(epochDay: Long): Int
+
     @Query("DELETE FROM entry WHERE deletedAt IS NOT NULL")
     suspend fun purgeAllTrash()
 

@@ -3,6 +3,7 @@
 
     <!-- 天气：唯一的外网请求（open-meteo，不需要 API key），失败就静默跳过 -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- 粗定位足够拿到城市级天气；不申请精确定位 -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 

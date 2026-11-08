@@ -24,6 +24,7 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
 
         val container = (application as DiaryApp).container
+        handleNotificationIntent(intent, container)
 
         setContent {
             DiaryTheme {
@@ -59,10 +60,27 @@ class MainActivity : FragmentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        handleNotificationIntent(intent, (application as DiaryApp).container)
+    }
+
+    /** 每日提醒点进来时带 EXTRA_NEW_ENTRY，解锁后直接开一篇新日记。 */
+    private fun handleNotificationIntent(
+        intent: android.content.Intent?,
+        container: com.synn.diary.data.AppContainer,
+    ) {
+        if (intent?.getBooleanExtra(com.synn.diary.notify.DailyReminder.EXTRA_NEW_ENTRY, false) == true) {
+            container.pendingNewEntry.value = true
+            intent.removeExtra(com.synn.diary.notify.DailyReminder.EXTRA_NEW_ENTRY)
+        }
+    }
+
     override fun onStop() {
         super.onStop()
         // 切后台就上锁；改配置（我们声明了 configChanges）不算离开
         val container = (application as DiaryApp).container
+        handleNotificationIntent(intent, container)
         // 正在选文件时切后台是"系统界面"导致的，不该上锁
         if (!isChangingConfigurations && !container.externalUiInProgress) {
             container.lockManager.lockIfEnabled()

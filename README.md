@@ -2,7 +2,7 @@
 
 安卓本地日记 App。只为自己用：不上架、不联网、数据全在手机上。
 
-**当前版本 0.25.0（仅调试版）** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
+**当前版本 0.26.0（仅调试版）** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
 ｜ 数据库 v6 ｜ 变更历史见 [CHANGELOG.md](CHANGELOG.md) ｜ 存档信息见 [ARCHIVE.md](ARCHIVE.md)
 
 ---
@@ -61,6 +61,18 @@
 - **收藏**：卡片出现 ★，**不置顶**，列表始终按时间倒序
 - **回收站**：删除是软删除；设置里可逐条还原、彻底删除、清空（上锁的日记在回收站里也只显示「🔒 已上锁」）；
   自动清理可选 1 周 / 1 个月 / 1 年 / **永久保留**（默认 1 个月）
+
+### 每日提醒
+
+- **设置 → 提醒 → 每日提醒**，默认关闭；打开时会请求通知权限
+- 固定 **21:00**，用 WorkManager 每 24 小时一次；**当天已经写过就不发**（空条目不算）
+- 通知用系统标准样式（`BigTextStyle`），渠道重要性 `IMPORTANCE_DEFAULT`（不会弹悬浮窗）
+- 用固定的 notification id，重复触发只覆盖不堆叠；`ongoing = false`
+- 点通知 / 点「写一句」直达一篇**新日记**（带 `EXTRA_NEW_ENTRY`，解锁后才生效）
+- 设置里有「试一下提醒」，立刻发一条看效果
+
+对照 vivo 两份通知规范（[doc/577](https://dev.vivo.com.cn/documentCenter/doc/577)、[doc/901](https://dev.vivo.com.cn/documentCenter/doc/901)）：
+不用自定义 RemoteViews、不用 ongoing、不自定义分组、文案短、有落地页。
 
 ### 备份与整理
 
@@ -195,6 +207,9 @@ deletedAt / weatherText / locationText / latitude / longitude / background / fav
 | 2.3–2.5 JobScheduler / 废弃 API | 无后台作业，N/A |
 | 2.7 无边框强制 | 已 edge-to-edge，未用 `windowOptOutEdgeToEdgeEnforcement` |
 | 2.11 Java API | 未用 `Thread.destroy/stop`、未用 `Locale` 构造器 |
+
+通知相关（doc/577、doc/901）：只用标准样式；渠道 `IMPORTANCE_DEFAULT`；不发 ongoing；不做自定义分组；
+每天最多一条且"写过就不发"；通知点击有明确落地页（新日记）。
 
 ### 4.2 64 位（[doc/511](https://dev.vivo.com.cn/documentCenter/doc/511)）
 

@@ -165,3 +165,11 @@
 - **日常只构建调试包**（`assembleDebug` → `com.synn.diary.debug`），装到这个包上验证
 - **正式包（`assembleRelease` → `com.synn.diary`）只在明确需要时构建**，不随每次改动一起出
 - 手机上只保留 `com.synn.diary.debug`；`dist/` 只放 debug APK 和源码 zip
+
+## 0.26.0 — 每日提醒
+
+- 新增 WorkManager 每日提醒（固定 21:00），**当天已写则不打扰**
+- 设置 → 提醒：开关 + 「试一下提醒」；开关时会请求 `POST_NOTIFICATIONS`
+- 通知用标准 `BigTextStyle`，渠道 `IMPORTANCE_DEFAULT`，`ongoing=false`，固定 id 不堆叠
+- 点击通知直达一篇新日记（解锁后才生效）
+- 依 vivo doc/577、doc/901 检查：无自定义布局、无 ongoing、无自定义分组、有落地页

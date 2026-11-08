@@ -2,6 +2,7 @@ package com.synn.diary
 
 import android.app.Application
 import com.synn.diary.data.AppContainer
+import com.synn.diary.notify.ReminderScheduler
 import kotlinx.coroutines.launch
 
 class DiaryApp : Application() {
@@ -18,6 +19,11 @@ class DiaryApp : Application() {
             container.appScope.launch {
                 runCatching { container.entryRepository.unlockAllEntries() }
             }
+        }
+
+        // 提醒开关开着就确保排期还在（系统清理 / 换机后补排）
+        container.appScope.launch {
+            runCatching { ReminderScheduler.ensureScheduled(this@DiaryApp) }
         }
 
         // 启动时清掉没人引用的图片（删标记不删文件的兜底）
