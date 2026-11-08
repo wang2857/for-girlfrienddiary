@@ -231,8 +231,9 @@ class BackupManager(
      * 去重键就是一直闲置的 `uuid`——每篇日记创建时都会打一个，
      * 所以同一份备份导几次也不会重复。写库走正常 Room 通道，不需要重启应用。
      */
-    suspend fun merge(uri: Uri): Result<MergeInfo> = withContext(Dispatchers.IO) {
-        runCatching {
+    suspend fun merge(uri: Uri, recoveryCode: String? = null): Result<MergeInfo> =
+        withContext(Dispatchers.IO) {
+            runCatching {
             val staging = unzipToStaging(uri)
             val db = File(staging, DB_NAME)
             require(db.exists() && db.length() > 0) { "不是有效的备份包（缺少数据库）" }
@@ -240,8 +241,16 @@ class BackupManager(
                 "这是旧版本导出的明文备份，当前版本只接受加密备份"
             }
 
-            // 备份包里的库可能是加密的（同一台设备导出的），也可能是老版本的明文
-            val source = openSource(db)
+            // 跨设备备份：先用恢复码把备份库的口令解出来，才有法读
+            val keyFile = File(staging, KEY_FILE)
+            val sourcePassphrase = if (keyFile.exists()) {
+                val code = recoveryCode?.trim().orEmpty()
+                require(code.isNotEmpty()) { "这个备份来自别的设备，需要恢复码" }
+                BackupKey.unwrap(keyFile.readBytes(), code) ?: error("恢复码不对，解不开这个备份")
+            } else {
+                dbPassphrase
+            }
+            val source = openSource(db, sourcePassphrase)
             try {
                 val rows = readSourceEntries(source)
                 val tagNames = readSourceTags(source)
@@ -384,13 +393,13 @@ class BackupManager(
     }
 
     /** 备份里的库一律是加密库（0.33.0 起）；明文备份直接拒绝。 */
-    private fun openSource(db: File): Source {
+    private fun openSource(db: File, passphrase: String): Source {
         require(!DbEncryption.isPlaintext(db)) {
             "这是旧版本导出的明文备份，当前版本只接受加密备份"
         }
         val encrypted = net.zetetic.database.sqlcipher.SQLiteDatabase.openDatabase(
             db.path,
-            dbPassphrase,
+            passphrase,
             null,
             net.zetetic.database.sqlcipher.SQLiteDatabase.OPEN_READONLY,
             null,

@@ -70,7 +70,7 @@ fun SettingsScreen(
     onOpenTrash: () -> Unit,
     onExport: (android.net.Uri, () -> Unit) -> Unit,
     onImport: (android.net.Uri, String?, () -> Unit) -> Unit,
-    onMergeImport: (android.net.Uri, () -> Unit) -> Unit,
+    onMergeImport: (android.net.Uri, String?, () -> Unit) -> Unit,
     pendingImport: kotlinx.coroutines.flow.StateFlow<android.net.Uri?>,
     onPickImport: (android.net.Uri) -> Unit,
     onClearPendingImport: () -> Unit,
@@ -138,6 +138,9 @@ fun SettingsScreen(
     // 跨设备备份要先知道"要不要问恢复码"，所以选中文件后先 inspect 一眼
     var needsRecoveryCode by remember { mutableStateOf(false) }
     var recoveryInput by remember { mutableStateOf("") }
+    // 合并导入也可能是跨设备备份，这时要先问恢复码
+    var pendingMerge by remember { mutableStateOf<android.net.Uri?>(null) }
+    var mergeCode by remember { mutableStateOf("") }
     val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/zip"),
     ) { uri ->
@@ -159,8 +162,17 @@ fun SettingsScreen(
     ) { uri ->
         onExternalUiEnd()
         if (uri != null) {
-            busy = "正在合并…"
-            onMergeImport(uri) { busy = null }
+            scope.launch {
+                val needsCode = container.backupManager.inspect(uri)
+                    .getOrNull()?.needsRecoveryCode == true
+                if (needsCode) {
+                    mergeCode = ""
+                    pendingMerge = uri
+                } else {
+                    busy = "正在合并…"
+                    onMergeImport(uri, null) { busy = null }
+                }
+            }
         }
     }
 
@@ -514,6 +526,39 @@ fun SettingsScreen(
                 }
             },
             onDismiss = { showRevealPin = false },
+        )
+    }
+
+    pendingMerge?.let { uri ->
+        AlertDialog(
+            onDismissRequest = { pendingMerge = null },
+            title = { Text("从别的设备合并？") },
+            text = {
+                Column {
+                    Text("这个备份的数据库口令用恢复码封着，输入当初抄下的 16 位才能读。")
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = mergeCode,
+                        onValueChange = { mergeCode = it.take(40) },
+                        label = { Text("恢复码") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = mergeCode.isNotBlank(),
+                    onClick = {
+                        val target = uri
+                        pendingMerge = null
+                        busy = "正在合并…"
+                        onMergeImport(target, mergeCode) { busy = null }
+                        mergeCode = ""
+                    },
+                ) { Text("合并") }
+            },
+            dismissButton = { TextButton(onClick = { pendingMerge = null }) { Text("取消") } },
         )
     }
 

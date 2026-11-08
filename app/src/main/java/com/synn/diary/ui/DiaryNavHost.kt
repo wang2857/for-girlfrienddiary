@@ -184,9 +184,9 @@ fun DiaryNavHost(container: AppContainer) {
                         done()
                     }
                 },
-                onMergeImport = { uri, done ->
+                onMergeImport = { uri, recoveryCode, done ->
                     scope.launch {
-                        val result = container.backupManager.merge(uri)
+                        val result = container.backupManager.merge(uri, recoveryCode)
                         Toast.makeText(
                             context,
                             result.fold(
