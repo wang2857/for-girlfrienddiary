@@ -164,3 +164,4 @@
 
 - **日常只构建调试包**（`assembleDebug` → `com.synn.diary.debug`），装到这个包上验证
 - **正式包（`assembleRelease` → `com.synn.diary`）只在明确需要时构建**，不随每次改动一起出
+- 手机上只保留 `com.synn.diary.debug`；`dist/` 只放 debug APK 和源码 zip

@@ -2,7 +2,7 @@
 
 安卓本地日记 App。只为自己用：不上架、不联网、数据全在手机上。
 
-**当前版本 0.25.0** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
+**当前版本 0.25.0（仅调试版）** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
 ｜ 数据库 v6 ｜ 变更历史见 [CHANGELOG.md](CHANGELOG.md) ｜ 存档信息见 [ARCHIVE.md](ARCHIVE.md)
 
 ---
@@ -95,11 +95,11 @@ cd diary
 > **约定：日常只构建并安装调试包**（`com.synn.diary.debug`）。
 > 正式包按需构建，避免每次改动都出两份产物、桌面装两个应用。
 
-| | release | debug |
+| | debug（日常） | release（按需） |
 |---|---|---|
-| 包名 | `com.synn.diary` | `com.synn.diary.debug` |
-| 体积 | 9.0 MB | 13 MB |
-| 数据 | 独立，与 debug 不相通 | 独立 |
+| 包名 | `com.synn.diary.debug` | `com.synn.diary` |
+| 体积 | 13 MB | 9.0 MB |
+| 保留产物 | 是，`dist/` | 否，构建后按需处理 |
 
 - release 沿用 `keystore/debug.keystore`（不上架，没另建正式签名）
 - **关掉 R8**（`isMinifyEnabled = false`）：Room / Coil 的反射在混淆下有踩坑风险，个人用不值得冒险
