@@ -26,6 +26,8 @@ data class BackupInfo(
     val entryCount: Int,
     val imageCount: Int,
     val backgroundCount: Int = 0,
+    /** 包里有没有用恢复码封的口令：没有就只能在本机恢复。 */
+    val portable: Boolean = false,
 )
 
 /** 备份包的元信息，导入前用来决定要不要问恢复码。 */
@@ -95,15 +97,17 @@ class BackupManager(
                 if (c.moveToFirst()) c.getInt(0) else 0
             }
 
+        // 跨设备备份：把数据库口令用恢复码包一份放进包里；没有恢复码就只做本机备份
+        val keyBlob = recoveryCodeProvider()?.let { code -> BackupKey.wrap(dbPassphrase, code) }
+
         val info = BackupInfo(
             exportedAt = System.currentTimeMillis(),
             schemaVersion = database.openHelper.readableDatabase.version,
             entryCount = entryCount,
             imageCount = images.size,
             backgroundCount = backgrounds.size,
+            portable = keyBlob != null,
         )
-        // 跨设备备份：把数据库口令用恢复码包一份放进包里；没有恢复码就只做本机备份
-        val keyBlob = recoveryCodeProvider()?.let { code -> BackupKey.wrap(dbPassphrase, code) }
 
         ZipOutputStream(out.buffered()).use { zip ->
             zip.putNextEntry(ZipEntry(MANIFEST))

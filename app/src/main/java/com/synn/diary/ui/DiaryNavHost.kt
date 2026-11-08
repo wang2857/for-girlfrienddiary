@@ -171,7 +171,11 @@ fun DiaryNavHost(container: AppContainer) {
                             context,
                             result.fold(
                                 {
-                                    "已导出：${it.entryCount} 条日记、${it.imageCount} 张图片、${it.backgroundCount} 张纸张"
+                                    buildString {
+                                        append("已导出：${it.entryCount} 条日记、${it.imageCount} 张图片、")
+                                        append("${it.backgroundCount} 张纸张")
+                                        if (!it.portable) append("（未设恢复码，只能在本机恢复）")
+                                    }
                                 },
                                 { "导出失败：${it.message}" },
                             ),
