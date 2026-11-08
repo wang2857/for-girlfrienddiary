@@ -15,8 +15,8 @@ android {
         applicationId = "com.synn.diary"
         minSdk = 26
         targetSdk = 36
-        versionCode = 61
-        versionName = "0.31.2"
+        versionCode = 62
+        versionName = "0.31.3"
 
         ndk {
             // 只打 64 位包：vivo 等国内商店早已只收 64 位，32 位 so 留着只是白白增大体积

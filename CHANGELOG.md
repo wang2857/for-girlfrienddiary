@@ -283,3 +283,23 @@ APK 从 13 MB 涨到约 17 MB（字体占 3.4 MB）。
 - 顶栏因此不再有文字基线，视觉上更轻；`contentDescription` 保留「返回」「保存」，无障碍和读屏不受影响
 - 引入 `androidx.compose.material:material-icons-core`（BOM 管版本，只带常用图标，体积增加可忽略）
 - 顺带把箭头做成 AutoMirrored：以后要做 RTL 语言时方向会自动翻
+
+## 0.31.3 — 软盘保存 + 搜索页顶栏
+
+- 「保存」换成软盘图标：`material-icons-extended` 里的 `save` 要多背 ~2 MB，所以改成自己拼的 `ImageVector`
+  （24×24 路径，`addPathNodes` 解析，颜色由 `Icon` 的 tint 覆盖），见 `ui/components/DiaryIcons.kt`
+- 搜索页顶栏换成 `CenterAlignedTopAppBar`：「搜索」居中，返回改成 ← 图标按钮
+- 回收站页顺手统一：返回也换成 ← 图标（原来还是文字「返回」）
+
+### vivo 转场动画接口：查了，没有可用的
+
+- vivo 文档中心（`dev.vivo.com.cn/documentCenter`）里搜遍「动效 / 动画 / 转场 / 过渡 / 一镜 / 流畅」，
+  只有三篇：**原子组件动效规范（doc/843，桌面组件）**、**流体动效适配方案（doc/724，锁屏主题脚本）**、
+  **视频动效组件（doc/1077，应用商店素材）**——都是设计规范/主题能力，没有面向三方 App 的转场 API
+- 跨厂商的"一镜到底"是金标联盟的 **SharedView Kit**（`gsai.sdk:sharedview-kit`，vivo 是成员之一），
+  但它是 **Activity → Activity** 的动画（`makeViewAnimationOptions` + `startActivity`），
+  且仓库是 HTTP Nexus 内测通道、版本用 `+` 动态解析
+- 本项目是**单 Activity + Compose Navigation**，列表→编辑页是 NavHost 路由切换，不是 Activity 跳转，
+  要用它得把编辑页拆成独立 Activity（连同 ViewModel、选图、返回逻辑一起重做），风险远大于收益
+- 结论：保持现状。以后想加过渡感，更合适的是 Compose 自己的 `SharedTransitionLayout`（应用内共享元素）
+  或 Android 14 的 `overrideActivityTransition`（Activity 转场参数），不依赖厂商 SDK

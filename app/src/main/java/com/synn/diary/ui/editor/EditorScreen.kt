@@ -35,7 +35,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -103,6 +102,7 @@ import com.synn.diary.data.PendingWrites
 import com.synn.diary.data.body.ImageAlign
 import com.synn.diary.data.db.TagEntity
 import com.synn.diary.ui.LocalImageFiles
+import com.synn.diary.ui.components.SaveIcon
 import com.synn.diary.ui.mood.Mood
 import com.synn.diary.util.Dates
 import kotlinx.coroutines.delay
@@ -259,7 +259,7 @@ fun EditorScreen(
                         },
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Check,
+                            imageVector = SaveIcon,
                             contentDescription = "保存",
                         )
                     }
