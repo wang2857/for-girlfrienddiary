@@ -41,6 +41,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -181,6 +185,11 @@ fun EditorScreen(
         }
     }
 
+    // 保存成功的轻反馈：先给一下"已收好"，再回列表
+    var showSavedHint by remember { mutableStateOf(false) }
+    val haptics = LocalHapticFeedback.current
+    val scope = rememberCoroutineScope()
+
     Scaffold(
         // 整个页面跟着键盘上浮：如果只给底部工具栏加 imePadding，
         // Scaffold 会把键盘高度也算进内容区留白，正文会被压没。
@@ -193,9 +202,17 @@ fun EditorScreen(
                 },
                 actions = {
                     TextButton(
+                        enabled = !showSavedHint,
                         onClick = {
-                            // 存完直接回列表：回到列表本身就是"已经存好"的反馈
-                            viewModel.saveNow { onBack() }
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            viewModel.saveNow {
+                                showSavedHint = true
+                                // 让"已收好"停留一小会儿再走，否则一闪就回列表看不见
+                                scope.launch {
+                                    delay(520)
+                                    onBack()
+                                }
+                            }
                         },
                     ) { Text("保存") }
                 },
@@ -443,6 +460,30 @@ fun EditorScreen(
                 onDismiss = { selectedImageId = null },
             )
         }
+        }
+
+    }
+
+    // 保存成功的轻提示。用 Popup 是为了不依赖父布局的 BoxScope，
+    // 也不会把编辑器内容重新布局一次。
+    if (showSavedHint) {
+        Popup(
+            alignment = Alignment.Center,
+            onDismissRequest = {},
+            properties = PopupProperties(focusable = false),
+        ) {
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = MaterialTheme.colorScheme.inverseSurface,
+                shadowElevation = 6.dp,
+            ) {
+                Text(
+                    text = "✓ 已收好",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.inverseOnSurface,
+                    modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp),
+                )
+            }
         }
     }
 
