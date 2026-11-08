@@ -52,6 +52,7 @@ import androidx.compose.foundation.layout.BoxScope
 import com.synn.diary.ui.LocalBackgroundFiles
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -214,13 +215,21 @@ fun EditorScreen(
     val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
 
+    // 纸铺满整页：状态栏、顶栏、正文是同一张纸，不再有一条颜色不同的顶栏
+    PaperBackdrop(
+        background = state.background,
+        modifier = Modifier.fillMaxSize(),
+    ) {
     Scaffold(
         // 整个页面跟着键盘上浮：如果只给底部工具栏加 imePadding，
         // Scaffold 会把键盘高度也算进内容区留白，正文会被压没。
-        modifier = Modifier.imePadding(),
+        modifier = Modifier.fillMaxSize().imePadding(),
+        // 让纸透上来；顶栏也透明，否则上方还是盖着一层底色
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = {},
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 navigationIcon = {
                     TextButton(onClick = onBack) { Text("返回") }
                 },
@@ -269,11 +278,6 @@ fun EditorScreen(
             )
         },
     ) { inner ->
-        // 纸张：预设走"底色 + 花纹"，自定义图片走"图 + 蒙版"
-        PaperBackdrop(
-            background = state.background,
-            modifier = Modifier.fillMaxSize(),
-        ) {
         // 关掉开关、或者纸上有花纹/照片时不画行线：两种纹理叠在一起太吵
         val ruleColor = MaterialTheme.colorScheme.onSurface.copy(
             alpha = if (!ruledLines || paperSuppressesRules) 0f else 0.03f,
@@ -511,7 +515,7 @@ fun EditorScreen(
                 onDismiss = { selectedImageId = null },
             )
         }
-        }
+    }
 
     }
 
