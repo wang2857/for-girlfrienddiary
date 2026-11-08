@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import android.net.Uri
 import com.synn.diary.data.EntryRepository
+import com.synn.diary.data.media.FontStore
 import com.synn.diary.data.media.ImageStore
 import com.synn.diary.data.db.EntryEntity
 import com.synn.diary.data.db.TagEntity
@@ -24,6 +25,7 @@ class EditorViewModel(
     private val repository: EntryRepository,
     private val weatherService: WeatherService,
     private val imageStore: ImageStore,
+    private val fontStore: FontStore,
     private val appScope: CoroutineScope,
     private val entryId: Long,
 ) : ViewModel() {
@@ -38,6 +40,7 @@ class EditorViewModel(
         val savedAt: Long = 0L,
         val deleted: Boolean = false,
         val background: EntryBackground = EntryBackground.default,
+        val fontId: String = "system",
         val weatherText: String? = null,
         val locationText: String? = null,
         val capturing: Boolean = false,
@@ -69,6 +72,7 @@ class EditorViewModel(
                     body = entry.body,
                     mood = entry.mood,
                     background = EntryBackground.from(entry.background),
+                    fontId = entry.font ?: "system",
                     loaded = true,
                     savedAt = entry.updatedAt,
                     weatherText = entry.weatherText,
@@ -145,6 +149,21 @@ class EditorViewModel(
         }
     }
 
+    /** 导入用户自己的字体文件；成功后直接切过去。 */
+    fun importFont(uri: Uri, onDone: (String?) -> Unit) {
+        viewModelScope.launch {
+            val fileName = fontStore.import(uri)
+            if (fileName != null) setFont("file:$fileName")
+            onDone(fileName)
+        }
+    }
+
+    /** 换正文字体：只影响这条日记，存字符串 id。 */
+    fun setFont(fontId: String) {
+        _state.update { it.copy(fontId = fontId) }
+        scheduleSave()
+    }
+
     fun setBackground(background: EntryBackground) {
         _state.update { it.copy(background = background) }
         scheduleSave()
@@ -214,6 +233,7 @@ class EditorViewModel(
             body = current.body,
             mood = current.mood,
             background = current.background.id,
+            font = current.fontId.takeIf { it != "system" },
         )
         _state.update { it.copy(savedAt = System.currentTimeMillis()) }
     }

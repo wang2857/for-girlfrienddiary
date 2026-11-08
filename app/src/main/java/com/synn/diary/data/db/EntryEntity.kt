@@ -36,6 +36,8 @@ data class EntryEntity(
     val longitude: Double? = null,
     // 纸张底色，存 EntryBackground.id；null = 默认
     val background: String? = null,
+    // 正文字体，存 ContentFont.id（system/serif/mono/wenkai/file:<文件名>）；null = 系统默认
+    val font: String? = null,
     val favorite: Boolean = false,
     val locked: Boolean = false,
 )

@@ -7,6 +7,7 @@ import com.synn.diary.data.db.AppDatabase
 import com.synn.diary.data.db.DbEncryption
 import com.synn.diary.data.db.DbKey
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
+import com.synn.diary.data.media.FontStore
 import com.synn.diary.data.media.ImageStore
 import com.synn.diary.data.backup.BackupManager
 import com.synn.diary.data.lock.LockManager
@@ -42,7 +43,8 @@ class AppContainer(context: Context) {
             "diary.db",
         )
             .openHelperFactory(SupportOpenHelperFactory(dbPassphrase.toByteArray()))
-                .addCallback(AppDatabase.SEARCH_INDEX_CALLBACK)
+                .addMigrations(AppDatabase.MIGRATION_8_9)
+            .addCallback(AppDatabase.SEARCH_INDEX_CALLBACK)
             // 老库直接丢：没有升级链，版本对不上就重建（对应的数据按产品决定放弃）
             .fallbackToDestructiveMigration(true)
             .build()
@@ -51,6 +53,8 @@ class AppContainer(context: Context) {
     val weatherService = WeatherService(appContext)
 
     val imageStore = ImageStore(appContext)
+
+    val fontStore = FontStore(appContext)
 
     val trashSettings = TrashSettings(appContext)
 

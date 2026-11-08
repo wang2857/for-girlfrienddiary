@@ -2,8 +2,8 @@
 
 安卓本地日记 App。只为自己用：不上架、不联网、数据全在手机上。
 
-**当前版本 0.38.1（仅调试版）** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
-｜ 数据库 v8 ｜ 变更历史见 [CHANGELOG.md](CHANGELOG.md) ｜ 存档信息见 [ARCHIVE.md](ARCHIVE.md)
+**当前版本 1.0.0（仅调试版）** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
+｜ 数据库 v9 ｜ 变更历史见 [CHANGELOG.md](CHANGELOG.md) ｜ 存档信息见 [ARCHIVE.md](ARCHIVE.md)
 
 ---
 
@@ -28,6 +28,8 @@
 - **底部工具栏**：插入图片 / **横线开关** / 更换纸张 / 删除，键盘弹出时跟着上浮
 - **整页是同一张纸**：纸的底色 / 花纹 / 自定义照片一直铺到状态栏和顶栏，
   上方不再有一条颜色不同的顶栏
+- **正文字体可选**：工具栏「字体」→ 系统默认 / 系统衬线 / 系统等宽 / 霞鹜文楷，
+  还能**导入自己的 ttf/otf**。字体只作用于这条日记的正文和标题，界面本身仍是手机系统字体
 - **纸页横线可以关**：工具栏「横线 · 开/关」一键切换，关掉就是一张干净的白纸；选择会记住，
   跟具体哪篇日记无关。带花纹的纸和自定义照片本来就不画线（两种纹理叠一起太吵），
   在这种纸上打开开关会提示一句
@@ -204,15 +206,15 @@ app/src/main/java/com/synn/diary/
 
 ### 数据模型
 
-`entry` 表（v8）：`id / uuid / entryDate(epochDay) / createdAt / updatedAt / title / body / mood /
-deletedAt / weatherText / locationText / latitude / longitude / background / favorite / locked`
+`entry` 表（v9）：`id / uuid / entryDate(epochDay) / createdAt / updatedAt / title / body / mood /
+deletedAt / weatherText / locationText / latitude / longitude / background / font / favorite / locked`
 
 - 另有 `tag`、`entry_tag` 两张业务表（外键 `CASCADE`），以及全文索引虚拟表 `entry_fts`（FTS5 trigram）
 - 图片**不进库**：正文用 `[[img:<文件名>|宽度%|对齐]]` 标记，文件在 `files/images/`；
   自定义纸张是 `background = img:<文件名>`，文件在 `files/backgrounds/`
 - `exportSchema = true`，schema JSON 在 `app/schemas/`（当前 `8.json`）
-- **v8 起没有迁移链**：app 没发布过，版本对不上就删表重建（`fallbackToDestructiveMigration`），
-  真要发布时再从 v8 往后补迁移
+- v8 之前没有迁移链（删表重建）；**v8→v9 加字体列这条是正经迁移**（`ALTER TABLE ADD COLUMN`），
+  以后新增字段都按这个来`
 
 ### 天气与定位
 
@@ -329,6 +331,9 @@ primaryCpuAbi=arm64-v8a   secondaryCpuAbi=null  ← 纯 64 位运行
 |---|---|
 | 数据库迁移 v1→…→v6 | ✅ 每步都实测过；v5→v6 在真机上 15 条记录完整 |
 | 新建 + 自动保存 + 保存返回列表 | ✅ |
+| 正文字体（预设） | ✅ 选「霞鹜文楷」后正文立刻变，界面仍是系统字体；重开应用仍记得 |
+| 正文字体（导入） | ✅ 从 Downloads 导入 3.5 MB 的 ttf → 出现在「我的字体」并自动选中；重启后仍选中 |
+| 数据库 8→9 | ✅ 迁移后原有 2 篇日记还在，`font` 默认 NULL（系统字体） |
 | 孤儿背景图清理 | ✅ 塞一张 2 小时前的 `orphan-test.jpg` 进 `files/backgrounds/`，重启后被删；仍被引用的背景图留着 |
 | 工具栏横线开关 | ✅ 点一下横线消失、按钮变灰「横线 · 关」；再点回来就恢复；重开应用仍记得 |
 | 横线跟纸张的关系 | ✅ 格纸上不画线，此时打开开关会提示原因；切回纯色纸横线立刻回来 |

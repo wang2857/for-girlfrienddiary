@@ -66,8 +66,9 @@ fun DiaryTheme(
     }
     MaterialTheme(
         colorScheme = colorScheme,
-        // 正文用文楷，标题和数字仍走系统字体——中文字体在大字号标题上会显得软
-        typography = Typography().withBodyFont(DiaryFonts.body),
+        // 界面文案一律用手机系统字体（中文 ROM 通常是厂商的思源黑体定制版）；
+        // 正文字体是"每条日记自己的属性"，由编辑器单独覆盖
+        typography = Typography(),
         shapes = DiaryShapes,
         content = content,
     )

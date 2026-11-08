@@ -1,29 +1,34 @@
 # 存档记录
 
-存档时间：**2026-11-08 18:31**
+存档时间：**2026-11-08 18:40**
 
-版本：**0.38.1-debug**（versionCode 71）｜ 数据库 **v8（SQLCipher + FTS5）** ｜ 纯 64 位（arm64-v8a）
-｜ 含每日提醒、恢复码、自动备份、崩溃日志
+版本：**1.0.0-debug**（versionCode 72）｜ 数据库 **v9（SQLCipher + FTS5）** ｜ 纯 64 位（arm64-v8a）
+｜ 含应用锁 / 恢复码 / 自动备份 / 跨设备备份 / 崩溃日志 / 正文字体
 
-> 只保留调试版：正式包（`com.synn.diary`）未构建、未安装，需要时再加。
+> 1.0 = 第一个"可以天天用"的存档。只保留调试版：正式包（`com.synn.diary`）未构建、未安装。
 
 ## 产物
 
 | 文件 | 体积 | SHA-256 |
 |---|---|---|
-| `dist/日记-0.38.1-debug.apk` | 21.4 MB | `b1ada1d15494cae6578a75b0fe6913418784f1c71a92f49af95d96c8680c1077` |
-| `dist/日记-0.38.1-源码.zip` | 6.5 MB | `2133e6eff2402c4090e9a00e2143a1875c5301a01f662ecc8a217d22355dbc09` |
+| `dist/日记-1.0.0-debug.apk` | 21 MB | `00bdc2727ff2d4aa9d61d5a1a57dc8fc60770ec088aaf75abe01dc3b1b6e8363` |
+| `dist/日记-1.0.0-源码.zip` | 6.4 MB | `eacc78903371cb0c605969af9b71b94bb3a448994831e77ddd73f20fa1f08392` |
 
 包名 `com.synn.diary.debug`，用 `keystore/debug.keystore` 签名，`install -r` 覆盖安装可保住数据。
 
 ## 代码状态
 
-源码快照（**不含 `.git`**，tag 历史留在工作目录的仓库里，当前 `v0.38.1`）：
+源码快照（**不含 `.git`**，tag 与分支历史留在工作目录的仓库里，当前 `v1.0.0`）：
 
-- `app/` 源码 + `app/schemas/`（Room 导出的 6 个版本 schema）
-- `docs/` 界面截图 + `plan.md`（产品方案原始文档）+ `database.md`（表结构与单位约定）
+- `app/` 源码 + `app/schemas/`（Room 导出的 schema，当前 `9.json`）
+- `docs/` 界面截图 + `plan.md`（产品方案）+ `database.md`（表结构、单位约定、FTS、备份格式）
 - `keystore/debug.keystore`（签名，随仓库保留以便继续覆盖升级）
-- `CHANGELOG.md`（0.1 → 0.38.1 的完整改动）
+- `CHANGELOG.md`（0.1 → 1.0.0 的完整改动）
+
+分支：
+
+- `main`：稳定线，1.0.0 在这里
+- `beautify`：美化分支（从 v1.0.0 拉出），改视觉/动效，验证满意再合回 `main`
 
 ## 如何重新构建
 
@@ -31,6 +36,7 @@
 cd diary
 ./build.sh assembleDebug     # 日常只用这个
 ./build.sh check64Bit        # 64 位自检
+./build.sh :app:lintDebug    # 静态检查（当前 0 Error）
 ```
 
 正式包按需：`./build.sh assembleRelease`（默认不做）。
@@ -40,32 +46,24 @@ cd diary
 
 ## 数据与备份
 
-三条路，各有各的边界：
+三条路，边界各不相同：
 
-1. **手动导出**（设置 → 数据 → 导出备份）：zip 存到手机任意位置，**唯一能扛卸载 / 换机的路**
-2. **自动备份**（设置 → 数据 → 自动备份）：每天 3:00 往 `files/backup/` 存一份，留 7 份，
-   防误删 / 写坏 / 导入覆盖；卸载或换机会跟着一起没
-3. **忘记密码**：锁屏「忘记密码？」+ 引导时抄下的 16 位恢复码 → 直接设新密码，日记不丢
+1. **手动导出**（设置 → 数据 → 导出备份）：zip = 加密库 + `images/` + `backgrounds/` + 恢复码封的 `key.bin`
+2. **自动备份**：每天 3:00 往 `files/backup/` 存一份，留 7 份；只在本机
+3. **换机恢复**：在新设备导入时输入恢复码 → 解出备份库口令 → `PRAGMA rekey` 换成本机口令
 
-手机上只有 `com.synn.diary.debug` 一个包。
-库文件在 `/data/data/com.synn.diary.debug/databases/diary.db`，图片在 `files/images/`，
-自动备份在 `files/backup/`，崩溃日志在 `files/crash/`；
-手动取库要拿全 `diary.db` + `-wal` + `-shm`。
+库文件在 `databases/diary.db`（SQLCipher 密文），图片 `files/images/`、自定义纸张 `files/backgrounds/`、
+导入的字体 `files/fonts/`、崩溃日志 `files/crash/`。
 
-## 每日提醒的实现要点
+## 安全模型
 
-- WorkManager 每 24h 一次，首次延迟对齐到下一个 21:00（`PeriodicWorkRequest` + `initialDelay`）
-- 渠道 `daily_reminder`，`IMPORTANCE_DEFAULT`；标准 `BigTextStyle`；`ongoing=false`；固定 id 1001 不堆叠
-- 当天已有非空日记则不发（`countOnDay`）
-- 系统里通知权限 / 渠道被关时不发，也不报错
-- 点击通知 → 带 `EXTRA_NEW_ENTRY` 打开 App，解锁后自动新建一篇
+- 应用锁：4 位 PIN（PBKDF2-HmacSHA256，12 万次 + 16 字节盐），只存哈希
+- 恢复码：16 位、只存哈希 + Keystore 封装的明文副本；可查看、可重设
+- 数据库：SQLCipher，口令随机 32 字节、Keystore AES-256-GCM 包裹，与 PIN 无关
+- 指纹走 `androidx.biometric`；默认 `FLAG_SECURE`
+- 切后台先盖不透明挡板、`onStop` 再上锁，回到前台不会闪出正文
+- 备份包里的库是密文；跨设备靠恢复码封的口令（`key.bin`）
 
-## 安全模型（0.30.2）
+## 已知欠账
 
-- 应用锁：4 位 PIN → PBKDF2-HmacSHA256，12 万次迭代 + 16 字节盐，只存哈希
-- 恢复码：16 位（32 字母表，去 0/O/1/I/L），哈希用于验证；另用 AndroidKeyStore 的 AES-256-GCM 密钥
-  封一份明文，设置里「查看」需先验 4 位密码。能拿 root / adb 备份的人可以解开，数据库本身也是明文
-- 指纹走 `androidx.biometric`；默认 `FLAG_SECURE` 禁截屏
-- 切后台时先盖不透明挡板（与窗口同色）、`onStop` 再上锁，回到前台不会闪出正文
-- **数据库用 SQLCipher 加密**：口令是随机 32 字节，被 AndroidKeyStore 的 AES-256-GCM 裹住，
-  跟 4 位 PIN 无关；备份包里的库也是密文，换机/重装后口令丢失就打不开
+见 `README.md` §6。最要紧的三条：没有测试、没有 CI、Markdown 只存不渲染。

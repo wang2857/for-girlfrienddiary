@@ -396,6 +396,7 @@ class BackupManager(
         val latitude: Double?,
         val longitude: Double?,
         val background: String?,
+        val font: String?,
         val favorite: Boolean,
         val locked: Boolean,
     ) {
@@ -413,6 +414,7 @@ class BackupManager(
             latitude = latitude,
             longitude = longitude,
             background = background,
+            font = font,
             favorite = favorite,
             locked = locked,
         )
@@ -460,6 +462,7 @@ class BackupManager(
                     latitude = c.doubleOr("latitude"),
                     longitude = c.doubleOr("longitude"),
                     background = c.stringOr("background"),
+                    font = c.stringOr("font"),
                     favorite = c.intOr("favorite") == 1,
                     locked = c.intOr("locked") == 1,
                 )

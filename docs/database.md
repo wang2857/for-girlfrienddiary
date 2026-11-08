@@ -1,4 +1,4 @@
-# 数据库格式（v8，SQLCipher 加密 + FTS5）
+# 数据库格式（v9，SQLCipher 加密 + FTS5）
 
 这页写给"三个月后想用 sqlite3 直接查点什么"的自己。所有内容都对着设备上真实的库核对过。
 
@@ -71,6 +71,7 @@ CREATE TABLE `entry` (
   `latitude`     REAL,
   `longitude`    REAL,
   `background`   TEXT,                             -- 纸张，见下
+  `font`         TEXT,                             -- 正文字体 id，见下
   `favorite`     INTEGER NOT NULL DEFAULT 0,
   `locked`       INTEGER NOT NULL DEFAULT 0
 );
@@ -83,6 +84,9 @@ CREATE UNIQUE INDEX `index_entry_uuid`      ON `entry` (`uuid`);
 - `default` / `cream` / `mint` / `peach` / `sakura` / `sky` / `butter` / `grid`
 - `img:<文件名>` —— 自定义图片纸，文件在 `files/backgrounds/<文件名>`
 - `NULL` 等价于 `default`
+
+`font` 的取值：`NULL`（系统默认）/ `serif` / `mono` / `wenkai`（自带霞鹜文楷）/ `file:<文件名>`
+（用户导入的字体，文件在 `files/fonts/`）。
 
 `mood` 存的是 emoji 本身（`😔 🙂 😐 😄` 等 8 种），不是枚举 id，所以加心情不需要迁移。
 
@@ -154,9 +158,8 @@ v3 加过一张 `attachment` 表记录"某条日记用过哪些图"，但从来�
 
 ## 6. 版本策略
 
-**v8 起不保留升级链**：app 从没发布过，旧库一律删掉重建
-（Room 的 `fallbackToDestructiveMigration`）。这样改 schema 不用背历史包袱；
-真到要发布那天，再从当时的版本开始写迁移。
+**v8 之前不保留升级链**（app 没发布过，旧库删掉重建）。从 **v8→v9 开始走正常迁移**：
+加 `font` 列用的是 `ALTER TABLE entry ADD COLUMN font TEXT`，旧数据原样保留。
 
 `app/schemas/<版本>.json` 是 Room 编译期导出的权威结构。
 

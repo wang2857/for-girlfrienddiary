@@ -252,6 +252,7 @@ fun DiaryNavHost(container: AppContainer) {
                         repository = container.entryRepository,
                         weatherService = container.weatherService,
                         imageStore = container.imageStore,
+                        fontStore = container.fontStore,
                         appScope = container.appScope,
                         entryId = entryId,
                     )
@@ -260,6 +261,7 @@ fun DiaryNavHost(container: AppContainer) {
             EditorScreen(
                 viewModel = viewModel,
                 editorSettings = container.editorSettings,
+                fontStore = container.fontStore,
                 onBack = { navController.popBackStack() },
                 // 选图/选背景是系统界面：这期间别上锁，否则回来图就丢了
                 onExternalUiStart = { container.externalUiInProgress = true },

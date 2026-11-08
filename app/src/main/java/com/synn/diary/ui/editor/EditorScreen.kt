@@ -98,6 +98,7 @@ import java.io.File
 import coil3.compose.AsyncImage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.synn.diary.data.EditorSettings
+import com.synn.diary.data.media.FontStore
 import com.synn.diary.data.PendingWrites
 import com.synn.diary.data.body.ImageAlign
 import com.synn.diary.data.db.TagEntity
@@ -113,6 +114,7 @@ import kotlinx.coroutines.delay
 fun EditorScreen(
     viewModel: EditorViewModel,
     editorSettings: EditorSettings,
+    fontStore: FontStore,
     onBack: () -> Unit,
     onExternalUiStart: () -> Unit = {},
     onExternalUiEnd: () -> Unit = {},
@@ -125,6 +127,11 @@ fun EditorScreen(
     var confirmDelete by remember { mutableStateOf(false) }
     var showBackgroundPicker by remember { mutableStateOf(false) }
     var showTagDialog by remember { mutableStateOf(false) }
+    var showFontPicker by remember { mutableStateOf(false) }
+    // 字体家族解析一次，别每次重组都重新读文件
+    val contentFamily = remember(state.fontId) {
+        ContentFont.from(state.fontId, fontStore).family(fontStore)
+    }
 
     val keyboard = LocalSoftwareKeyboardController.current
     val context = LocalContext.current
@@ -169,6 +176,19 @@ fun EditorScreen(
     ) { uri ->
         onExternalUiEnd()
         if (uri != null) viewModel.importBackground(uri)
+    }
+
+    val fontPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        onExternalUiEnd()
+        if (uri != null) {
+            viewModel.importFont(uri) { fileName ->
+                if (fileName == null) {
+                    Toast.makeText(context, "这个文件不是字体（只支持 ttf / otf）", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 
     val imagePicker = rememberLauncherForActivityResult(
@@ -275,6 +295,7 @@ fun EditorScreen(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
                     )
                 },
+                onFont = { showFontPicker = true },
                 linesOn = ruledLines,
                 onToggleLines = {
                     val next = !ruledLines
@@ -433,6 +454,7 @@ fun EditorScreen(
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = MaterialTheme.typography.titleLarge.copy(
                     color = MaterialTheme.colorScheme.onSurface,
+                    fontFamily = contentFamily,
                 ),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 singleLine = true,
@@ -440,7 +462,7 @@ fun EditorScreen(
                     if (state.title.isEmpty()) {
                         Text(
                             text = "标题（可选）",
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleLarge.copy(fontFamily = contentFamily),
                             color = MaterialTheme.colorScheme.outline,
                         )
                     }
@@ -472,13 +494,16 @@ fun EditorScreen(
                                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                                     color = MaterialTheme.colorScheme.onSurface,
                                     lineHeight = 26.sp,
+                                    fontFamily = contentFamily,
                                 ),
                                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                                 decorationBox = { innerTextField ->
                                     if (block.value.text.isEmpty() && blocks.size == 1) {
                                         Text(
                                             text = "写点什么…",
-                                            style = MaterialTheme.typography.bodyLarge,
+                                            style = MaterialTheme.typography.bodyLarge.copy(
+                                                fontFamily = contentFamily,
+                                            ),
                                             color = MaterialTheme.colorScheme.outline,
                                         )
                                     }
@@ -555,6 +580,23 @@ fun EditorScreen(
                 )
             }
         }
+    }
+
+    if (showFontPicker) {
+        FontPickerDialog(
+            currentId = state.fontId,
+            store = fontStore,
+            onPick = { id ->
+                viewModel.setFont(id)
+                showFontPicker = false
+            },
+            onImport = {
+                showFontPicker = false
+                onExternalUiStart()
+                fontPicker.launch(arrayOf("*/*"))
+            },
+            onDismiss = { showFontPicker = false },
+        )
     }
 
     if (showBackgroundPicker) {
@@ -763,6 +805,7 @@ private fun TagDialog(
 @Composable
 private fun EditorToolbar(
     onInsertImage: () -> Unit,
+    onFont: () -> Unit,
     linesOn: Boolean,
     onToggleLines: () -> Unit,
     onBackground: () -> Unit,
@@ -777,12 +820,13 @@ private fun EditorToolbar(
         ) {
             ToolbarItem("图片", onInsertImage, Modifier.weight(1f))
             ToolbarItem(
-                label = if (linesOn) "横线 · 开" else "横线 · 关",
+                label = "横线",
                 onClick = onToggleLines,
                 modifier = Modifier.weight(1f),
-                // 关掉时用灰色，别让它看起来像可点的错误操作
+                // 关掉时用灰色；工具栏现在 5 项，不再用"开/关"后缀占宽度
                 muted = !linesOn,
             )
+            ToolbarItem("字体", onFont, Modifier.weight(1f))
             ToolbarItem("背景", onBackground, Modifier.weight(1f))
             ToolbarItem("删除", onDelete, Modifier.weight(1f), error = true)
         }
@@ -813,6 +857,96 @@ private fun ToolbarItem(
                 else -> MaterialTheme.colorScheme.onSurface
             },
         )
+    }
+}
+
+@Composable
+private fun FontPickerDialog(
+    currentId: String,
+    store: FontStore,
+    onPick: (String) -> Unit,
+    onImport: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val customFiles = remember(store) { store.list() }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("正文字体") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 460.dp)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                Text(
+                    text = "只改这条日记的正文；界面本身仍用手机系统字体。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+                Spacer(Modifier.height(8.dp))
+
+                ContentFont.presets.forEach { font ->
+                    FontRow(
+                        label = font.label,
+                        family = font.family(store),
+                        selected = currentId == font.id,
+                        onClick = { onPick(font.id) },
+                    )
+                }
+
+                if (customFiles.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "我的字体",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    customFiles.forEach { file ->
+                        val font = ContentFont.custom(file.name, store)
+                        FontRow(
+                            label = store.displayName(file.name),
+                            family = font.family(store),
+                            selected = currentId == font.id,
+                            onClick = { onPick(font.id) },
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(6.dp))
+                TextButton(onClick = onImport) { Text("＋ 导入字体（ttf / otf）") }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("完成") } },
+    )
+}
+
+@Composable
+private fun FontRow(
+    label: String,
+    family: androidx.compose.ui.text.font.FontFamily?,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = label, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = "永和九年，岁在癸丑 Aa",
+                style = MaterialTheme.typography.bodyLarge.copy(fontFamily = family),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+        }
+        if (selected) {
+            Text("✓", color = MaterialTheme.colorScheme.primary)
+        }
     }
 }
 

@@ -167,7 +167,14 @@ class EntryRepository(
     /**
      * 只更新内容字段，不覆盖 deletedAt —— 否则"删除后又触发一次自动保存"会把条目复活。
      */
-    suspend fun save(id: Long, title: String, body: String, mood: String?, background: String?) {
+    suspend fun save(
+        id: Long,
+        title: String,
+        body: String,
+        mood: String?,
+        background: String?,
+        font: String?,
+    ) {
         val current = entryDao.get(id) ?: return
         entryDao.update(
             current.copy(
@@ -175,6 +182,7 @@ class EntryRepository(
                 body = body,
                 mood = mood,
                 background = background,
+                font = font,
                 updatedAt = System.currentTimeMillis(),
             ),
         )
