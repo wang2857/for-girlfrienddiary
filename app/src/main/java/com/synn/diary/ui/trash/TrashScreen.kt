@@ -184,8 +184,12 @@ private fun TrashRow(
     onPurge: () -> Unit,
 ) {
     val entry = item.entry
-    val preview = BodyMarkers.strip(entry.body)
-    val title = entry.title.ifBlank { preview.ifBlank { "（空）" } }
+    // 上锁的日记在回收站里也不能露内容——否则"删掉再来看回收站"就绕过了验证
+    val preview = if (entry.locked) "" else BodyMarkers.strip(entry.body)
+    val title = when {
+        entry.locked -> "🔒 已上锁"
+        else -> entry.title.ifBlank { preview.ifBlank { "（空）" } }
+    }
 
     Column(
         modifier = Modifier

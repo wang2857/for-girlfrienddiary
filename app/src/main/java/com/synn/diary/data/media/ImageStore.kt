@@ -68,6 +68,10 @@ class ImageStore(context: Context) {
             .getOrNull()
     }
 
+    /** 目录里现有的文件（文件名 → 最后修改时间毫秒）。 */
+    fun listFiles(): Map<String, Long> =
+        dir.listFiles()?.filter { it.isFile }?.associate { it.name to it.lastModified() } ?: emptyMap()
+
     suspend fun delete(name: String) = withContext(Dispatchers.IO) {
         file(name).delete()
     }

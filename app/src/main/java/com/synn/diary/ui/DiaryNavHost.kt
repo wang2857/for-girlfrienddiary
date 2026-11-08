@@ -13,6 +13,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
+import kotlinx.coroutines.delay
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -147,6 +149,36 @@ fun DiaryNavHost(container: AppContainer) {
             SettingsScreen(
                 lockManager = container.lockManager,
                 onOpenTrash = { navController.navigate("trash") },
+                onExport = { uri ->
+                    scope.launch {
+                        val result = container.backupManager.export(uri)
+                        Toast.makeText(
+                            context,
+                            result.fold(
+                                { "已导出：${it.entryCount} 条日记、${it.imageCount} 张图片" },
+                                { "导出失败：${it.message}" },
+                            ),
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    }
+                },
+                pendingImport = container.pendingImportUri,
+                onPickImport = { container.pendingImportUri.value = it },
+                onExternalUiStart = { container.externalUiInProgress = true },
+                onExternalUiEnd = { container.externalUiInProgress = false },
+                onClearPendingImport = { container.pendingImportUri.value = null },
+                onImport = { uri ->
+                    scope.launch {
+                        val result = container.backupManager.import(uri)
+                        result.onSuccess {
+                            Toast.makeText(context, "导入完成，正在重启…", Toast.LENGTH_LONG).show()
+                            delay(800)
+                            restartApp(context)
+                        }.onFailure {
+                            Toast.makeText(context, "导入失败：${it.message}", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                },
                 onDisableLock = {
                     container.lockManager.disableLock()
                     // 没有密码就再也验不了单篇锁，所以一并解开，避免日记打不开
@@ -204,4 +236,12 @@ fun DiaryNavHost(container: AppContainer) {
             onDismiss = { pendingUnlock = null },
         )
     }
+}
+
+/** 导入后必须重启：数据库文件被整个换掉了，进程内的 Room 连接已经作废。 */
+private fun restartApp(context: android.content.Context) {
+    val intent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
+    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+    context.startActivity(intent)
+    android.os.Process.killProcess(android.os.Process.myPid())
 }

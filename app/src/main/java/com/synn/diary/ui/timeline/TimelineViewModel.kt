@@ -26,6 +26,11 @@ class TimelineViewModel(private val repository: EntryRepository) : ViewModel() {
     private val selectedMood = MutableStateFlow<String?>(null)
     private val onlyFavorites = MutableStateFlow(false)
 
+    /** 一次加载多少条；点底部"加载更早"再加一页。 */
+    private val pageSize = 200
+    private val limit = MutableStateFlow(pageSize)
+    val loadedAll = MutableStateFlow(false)
+
     val selectedTag: StateFlow<Long?> = selectedTagId.asStateFlow()
     val moodFilter: StateFlow<String?> = selectedMood.asStateFlow()
     val favoritesOnly: StateFlow<Boolean> = onlyFavorites.asStateFlow()
@@ -37,10 +42,11 @@ class TimelineViewModel(private val repository: EntryRepository) : ViewModel() {
     private val collapsed = MutableStateFlow<Set<String>>(emptySet())
 
     /** 标签走 SQL 过滤，心情在这层再筛一遍：两者是 AND 关系。 */
-    private val entries = combine(selectedTagId, selectedMood, onlyFavorites) { tagId, mood, favorites ->
+    private val entries = combine(selectedTagId, selectedMood, onlyFavorites, limit) { tagId, mood, favorites, _ ->
         Triple(tagId, mood, favorites)
     }.flatMapLatest { (tagId, mood, favorites) ->
-        repository.timeline(tagId, favorites).map { list ->
+        repository.timeline(tagId, favorites, limit.value).map { list ->
+            loadedAll.value = list.size < limit.value
             if (mood == null) list else list.filter { it.entry.mood == mood }
         }
     }
@@ -55,6 +61,18 @@ class TimelineViewModel(private val repository: EntryRepository) : ViewModel() {
 
     fun toggleMood(emoji: String) {
         selectedMood.value = if (selectedMood.value == emoji) null else emoji
+    }
+
+    fun deleteTag(tagId: Long) {
+        viewModelScope.launch {
+            if (selectedTagId.value == tagId) selectedTagId.value = null
+            repository.deleteTag(tagId)
+        }
+    }
+
+    fun loadMore() {
+        if (loadedAll.value) return
+        limit.value += pageSize
     }
 
     fun toggleFavoritesOnly() {

@@ -3,6 +3,7 @@ package com.synn.diary.ui.timeline
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -36,12 +38,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.synn.diary.ui.components.DiaryBottomBar
 import com.synn.diary.ui.components.EntryCard
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.mutableStateOf
@@ -75,6 +79,10 @@ fun TimelineScreen(
     val scope = rememberCoroutineScope()
     // 解除单篇锁同样要验密码，不能点一下就解开
     var pendingUnlockRemoval by remember { mutableStateOf<EntryWithTags?>(null) }
+    // 标签管理（长按会被 Chip 自己的点击吃掉，改成显式入口）
+    var showTagManager by remember { mutableStateOf(false) }
+    var pendingTagDelete by remember { mutableStateOf<Pair<Long, String>?>(null) }
+    val loadedAll by viewModel.loadedAll.collectAsStateWithLifecycle()
 
     // 贴顶的永远是最顶层那级：有多年时贴"年"，只有一年时贴"月"。
     // 否则单一年的用户会完全没有贴顶标题，滚动时不知道自己在哪个月。
@@ -110,6 +118,7 @@ fun TimelineScreen(
                 onToggleMood = viewModel::toggleMood,
                 favoritesOnly = favoritesOnly,
                 onToggleFavorites = viewModel::toggleFavoritesOnly,
+                onManageTags = { showTagManager = true },
                 onClear = viewModel::clearFilters,
             )
 
@@ -224,6 +233,53 @@ fun TimelineScreen(
         }
     }
 
+    if (showTagManager) {
+        AlertDialog(
+            onDismissRequest = { showTagManager = false },
+            title = { Text("管理标签") },
+            text = {
+                Column {
+                    if (tags.isEmpty()) {
+                        Text("还没有标签")
+                    }
+                    tags.forEach { tag ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(tag.name, modifier = Modifier.weight(1f))
+                            TextButton(onClick = { pendingTagDelete = tag.id to tag.name }) {
+                                Text("删除", color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showTagManager = false }) { Text("完成") }
+            },
+        )
+    }
+
+    pendingTagDelete?.let { (tagId, name) ->
+        AlertDialog(
+            onDismissRequest = { pendingTagDelete = null },
+            title = { Text("删除标签「$name」？") },
+            text = { Text("只删标签本身，日记内容不受影响。") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteTag(tagId)
+                    pendingTagDelete = null
+                }) { Text("删除") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingTagDelete = null }) { Text("取消") }
+            },
+        )
+    }
+
     pendingUnlockRemoval?.let { target ->
         UnlockEntryDialog(
             title = "解除这篇日记的锁定",
@@ -334,6 +390,7 @@ private fun FilterBar(
     onToggleMood: (String) -> Unit,
     favoritesOnly: Boolean,
     onToggleFavorites: () -> Unit,
+    onManageTags: () -> Unit,
     onClear: () -> Unit,
 ) {
     LazyRow(
@@ -367,6 +424,12 @@ private fun FilterBar(
         }
 
         if (tags.isNotEmpty()) {
+            item(key = "manage") {
+                AssistChip(
+                    onClick = onManageTags,
+                    label = { Text("管理") },
+                )
+            }
             item(key = "divider") {
                 // 一条细细的分隔线，把"标签"和"心情"两组分开，避免以为点错了组
                 Box(

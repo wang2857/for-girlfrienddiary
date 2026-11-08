@@ -24,9 +24,13 @@ class EntryRepository(
 
     // ---- 读 ----
 
-    fun timeline(tagId: Long? = null, onlyFavorites: Boolean = false): Flow<List<EntryWithTags>> {
+    fun timeline(
+        tagId: Long? = null,
+        onlyFavorites: Boolean = false,
+        limit: Int = 200,
+    ): Flow<List<EntryWithTags>> {
         val fav = if (onlyFavorites) 1 else 0
-        return if (tagId == null) entryDao.observeTimeline(fav) else entryDao.observeByTag(tagId, fav)
+        return if (tagId == null) entryDao.observeTimeline(fav, limit) else entryDao.observeByTag(tagId, fav, limit)
     }
 
     suspend fun setFavorite(id: Long, favorite: Boolean) = entryDao.setFavorite(id, favorite)
@@ -49,6 +53,28 @@ class EntryRepository(
         val entry = entryDao.get(id) ?: return
         BodyMarkers.allImages(entry.body).forEach { imageStore.delete(it) }
         entryDao.hardDelete(id)
+    }
+
+    /**
+     * 清掉没被任何正文引用的图片文件。
+     *
+     * 只有点图片浮层的 × 才会删文件；如果直接删掉正文里的 `[[img:...]]` 标记，
+     * 文件会永远留在磁盘上。启动时扫一遍兜底。
+     */
+    suspend fun cleanupOrphanImages(): Int {
+        val referenced = entryDao.allBodies()
+            .flatMap { BodyMarkers.allImages(it) }
+            .toSet()
+        // 刚导入还没写进正文的文件别动（留 1 小时缓冲）
+        val cutoff = System.currentTimeMillis() - 60 * 60 * 1000
+        var removed = 0
+        imageStore.listFiles().forEach { (name, modified) ->
+            if (name !in referenced && modified < cutoff) {
+                imageStore.delete(name)
+                removed++
+            }
+        }
+        return removed
     }
 
     /** 清空回收站。 */

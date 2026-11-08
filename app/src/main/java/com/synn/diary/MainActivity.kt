@@ -62,8 +62,10 @@ class MainActivity : FragmentActivity() {
     override fun onStop() {
         super.onStop()
         // 切后台就上锁；改配置（我们声明了 configChanges）不算离开
-        if (!isChangingConfigurations) {
-            (application as DiaryApp).container.lockManager.lockIfEnabled()
+        val container = (application as DiaryApp).container
+        // 正在选文件时切后台是"系统界面"导致的，不该上锁
+        if (!isChangingConfigurations && !container.externalUiInProgress) {
+            container.lockManager.lockIfEnabled()
         }
     }
 }

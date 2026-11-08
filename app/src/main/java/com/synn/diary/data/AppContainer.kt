@@ -1,9 +1,11 @@
 package com.synn.diary.data
 
 import android.content.Context
+import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.room.Room
 import com.synn.diary.data.db.AppDatabase
 import com.synn.diary.data.media.ImageStore
+import com.synn.diary.data.backup.BackupManager
 import com.synn.diary.data.lock.LockManager
 import com.synn.diary.data.lock.LockStore
 import com.synn.diary.data.memory.MemoryPressureBridge
@@ -41,6 +43,21 @@ class AppContainer(context: Context) {
     val imageStore = ImageStore(appContext)
 
     val trashSettings = TrashSettings(appContext)
+
+    val backupManager = BackupManager(appContext, database, imageStore)
+
+    /**
+     * 选完文件到确认导入之间会经历"切后台 → 应用锁上锁 → 回来重建界面"，
+     * 这个待办放在应用级，否则用户选完文件回来发现什么都没发生。
+     */
+    val pendingImportUri = MutableStateFlow<android.net.Uri?>(null)
+
+    /**
+     * 正在用系统界面（文件选择器 / 分享面板）。
+     * 这类界面会把应用切到后台，若此时上锁，用户回来要先解锁、还丢掉了刚才的选择，
+     * 所以这期间不上锁。
+     */
+    var externalUiInProgress = false
 
     val entryRepository = EntryRepository(
         entryDao = database.entryDao(),

@@ -23,9 +23,10 @@ interface EntryDao {
           AND (length(trim(title)) > 0 OR length(trim(body)) > 0)
           AND (:onlyFavorites = 0 OR favorite = 1)
         ORDER BY entryDate DESC, createdAt DESC
+        LIMIT :limit
         """,
     )
-    fun observeTimeline(onlyFavorites: Int): Flow<List<EntryWithTags>>
+    fun observeTimeline(onlyFavorites: Int, limit: Int): Flow<List<EntryWithTags>>
 
     @Transaction
     @Query(
@@ -36,9 +37,10 @@ interface EntryDao {
           AND id IN (SELECT entryId FROM entry_tag WHERE tagId = :tagId)
           AND (:onlyFavorites = 0 OR favorite = 1)
         ORDER BY entryDate DESC, createdAt DESC
+        LIMIT :limit
         """,
     )
-    fun observeByTag(tagId: Long, onlyFavorites: Int): Flow<List<EntryWithTags>>
+    fun observeByTag(tagId: Long, onlyFavorites: Int, limit: Int): Flow<List<EntryWithTags>>
 
     /** 中文场景先用 LIKE：几万条内够用，等数据量上来再换 FTS5 trigram。 */
     @Transaction
@@ -47,6 +49,7 @@ interface EntryDao {
         SELECT * FROM entry
         WHERE deletedAt IS NULL
           AND (length(trim(title)) > 0 OR length(trim(body)) > 0)
+          AND locked = 0
           AND (title LIKE '%' || :keyword || '%' OR body LIKE '%' || :keyword || '%')
         ORDER BY entryDate DESC, createdAt DESC
         """,
@@ -122,6 +125,10 @@ interface EntryDao {
 
     @Query("SELECT * FROM entry WHERE deletedAt IS NOT NULL")
     suspend fun allTrashed(): List<EntryEntity>
+
+    /** 回收站里的也要算：它们还等着被还原，不能把图删了。 */
+    @Query("SELECT body FROM entry")
+    suspend fun allBodies(): List<String>
 
     @Query("DELETE FROM entry WHERE deletedAt IS NOT NULL")
     suspend fun purgeAllTrash()

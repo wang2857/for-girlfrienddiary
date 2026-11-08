@@ -20,6 +20,11 @@ class DiaryApp : Application() {
             }
         }
 
+        // 启动时清掉没人引用的图片（删标记不删文件的兜底）
+        container.appScope.launch {
+            runCatching { container.entryRepository.cleanupOrphanImages() }
+        }
+
         // 启动时清掉回收站里超过保留期的条目
         container.appScope.launch {
             runCatching { container.entryRepository.purgeExpired(container.trashSettings.retentionDays) }
