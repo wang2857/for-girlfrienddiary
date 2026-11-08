@@ -1,5 +1,6 @@
 package com.synn.diary.ui.editor
 
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -76,6 +77,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -90,6 +92,7 @@ import androidx.compose.ui.unit.sp
 import java.io.File
 import coil3.compose.AsyncImage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.synn.diary.data.EditorSettings
 import com.synn.diary.data.PendingWrites
 import com.synn.diary.data.body.ImageAlign
 import com.synn.diary.data.db.TagEntity
@@ -103,6 +106,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun EditorScreen(
     viewModel: EditorViewModel,
+    editorSettings: EditorSettings,
     onBack: () -> Unit,
     onExternalUiStart: () -> Unit = {},
     onExternalUiEnd: () -> Unit = {},
@@ -117,6 +121,12 @@ fun EditorScreen(
     var showTagDialog by remember { mutableStateOf(false) }
 
     val keyboard = LocalSoftwareKeyboardController.current
+    val context = LocalContext.current
+
+    // 横线是"看习惯"的开关，全局记忆；纸张花纹/照片本身不画线，这里只是决定纯色纸上画不画
+    var ruledLines by remember { mutableStateOf(editorSettings.ruledLines) }
+    val paperSuppressesRules = (state.background as? EntryBackground.Preset)
+        ?.pattern?.let { it != PaperPattern.NONE } ?: (state.background is EntryBackground.Custom)
 
     // 正文是"文本块 + 图片块"的列表：图片插在哪个位置，就等价于图片块在列表里的位置。
     val blocks = remember { mutableStateListOf<BodyBlock>() }
@@ -241,6 +251,19 @@ fun EditorScreen(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
                     )
                 },
+                linesOn = ruledLines,
+                onToggleLines = {
+                    val next = !ruledLines
+                    ruledLines = next
+                    editorSettings.ruledLines = next
+                    if (next && paperSuppressesRules) {
+                        Toast.makeText(
+                            context,
+                            "这张纸有花纹或是照片，本来就不画横线；换回纯色纸才看得到",
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    }
+                },
                 onBackground = { showBackgroundPicker = true },
                 onDelete = { confirmDelete = true },
             )
@@ -251,10 +274,10 @@ fun EditorScreen(
             background = state.background,
             modifier = Modifier.fillMaxSize(),
         ) {
-        // 纸上有花纹时不画行线：两种纹理叠在一起太吵
-        val hasPattern = (state.background as? EntryBackground.Preset)
-            ?.pattern?.let { it != PaperPattern.NONE } ?: (state.background is EntryBackground.Custom)
-        val ruleColor = MaterialTheme.colorScheme.onSurface.copy(alpha = if (hasPattern) 0f else 0.03f)
+        // 关掉开关、或者纸上有花纹/照片时不画行线：两种纹理叠在一起太吵
+        val ruleColor = MaterialTheme.colorScheme.onSurface.copy(
+            alpha = if (!ruledLines || paperSuppressesRules) 0f else 0.03f,
+        )
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -721,6 +744,8 @@ private fun TagDialog(
 @Composable
 private fun EditorToolbar(
     onInsertImage: () -> Unit,
+    linesOn: Boolean,
+    onToggleLines: () -> Unit,
     onBackground: () -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -732,6 +757,13 @@ private fun EditorToolbar(
                 .padding(vertical = 4.dp),
         ) {
             ToolbarItem("图片", onInsertImage, Modifier.weight(1f))
+            ToolbarItem(
+                label = if (linesOn) "横线 · 开" else "横线 · 关",
+                onClick = onToggleLines,
+                modifier = Modifier.weight(1f),
+                // 关掉时用灰色，别让它看起来像可点的错误操作
+                muted = !linesOn,
+            )
             ToolbarItem("背景", onBackground, Modifier.weight(1f))
             ToolbarItem("删除", onDelete, Modifier.weight(1f), error = true)
         }
@@ -744,6 +776,7 @@ private fun ToolbarItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     error: Boolean = false,
+    muted: Boolean = false,
 ) {
     Box(
         modifier = modifier
@@ -755,7 +788,11 @@ private fun ToolbarItem(
         Text(
             text = label,
             style = MaterialTheme.typography.labelLarge,
-            color = if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+            color = when {
+                error -> MaterialTheme.colorScheme.error
+                muted -> MaterialTheme.colorScheme.outline
+                else -> MaterialTheme.colorScheme.onSurface
+            },
         )
     }
 }

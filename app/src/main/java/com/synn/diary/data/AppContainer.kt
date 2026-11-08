@@ -44,6 +44,8 @@ class AppContainer(context: Context) {
 
     val trashSettings = TrashSettings(appContext)
 
+    val editorSettings = EditorSettings(appContext)
+
     val backupManager = BackupManager(appContext, database, imageStore)
 
     /**
