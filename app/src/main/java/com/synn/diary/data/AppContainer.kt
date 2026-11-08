@@ -43,9 +43,9 @@ class AppContainer(context: Context) {
             "diary.db",
         )
             .openHelperFactory(SupportOpenHelperFactory(dbPassphrase.toByteArray()))
-                .addMigrations(AppDatabase.MIGRATION_8_9)
+            // v8→v9 是正经迁移；更早的版本没有升级链，按产品决定直接重建
+            .addMigrations(AppDatabase.MIGRATION_8_9)
             .addCallback(AppDatabase.SEARCH_INDEX_CALLBACK)
-            // 老库直接丢：没有升级链，版本对不上就重建（对应的数据按产品决定放弃）
             .fallbackToDestructiveMigration(true)
             .build()
     }
@@ -60,7 +60,7 @@ class AppContainer(context: Context) {
 
     val editorSettings = EditorSettings(appContext)
 
-    val backupManager = BackupManager(appContext, database, imageStore, dbPassphrase) {
+    val backupManager = BackupManager(appContext, database, imageStore, fontStore, dbPassphrase) {
         // 恢复码的明文存在 Keystore 封装的副本里，导出时用它包口令（跨设备备份）
         lockManager.revealRecoveryCode()
     }

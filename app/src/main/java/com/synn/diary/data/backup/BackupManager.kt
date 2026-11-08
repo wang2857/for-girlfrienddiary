@@ -10,6 +10,7 @@ import com.synn.diary.data.db.AppDatabase
 import com.synn.diary.data.db.EntryEntity
 import com.synn.diary.data.db.EntryTagEntity
 import com.synn.diary.data.db.TagEntity
+import com.synn.diary.data.media.FontStore
 import com.synn.diary.data.media.ImageStore
 import java.io.File
 import java.util.zip.ZipEntry
@@ -54,6 +55,7 @@ class BackupManager(
     private val context: Context,
     private val database: AppDatabase,
     private val imageStore: ImageStore,
+    private val fontStore: FontStore,
     private val dbPassphrase: String,
     /** 恢复码（明文）。有的话，导出时用它把数据库口令再封一份放进包里，换机才解得开。 */
     private val recoveryCodeProvider: () -> String?,
@@ -92,6 +94,8 @@ class BackupManager(
 
         val images = imageStore.listFiles()
         val backgrounds = imageStore.listBackgrounds()
+        // 用户导入的字体也会影响显示，跟着备份走（跨设备恢复后正文不会掉回系统字体）
+        val fonts = fontStore.list()
         val entryCount = database.openHelper.readableDatabase
             .query("SELECT count(*) FROM entry").use { c ->
                 if (c.moveToFirst()) c.getInt(0) else 0
@@ -138,6 +142,12 @@ class BackupManager(
             backgrounds.keys.forEach { name ->
                 zip.putNextEntry(ZipEntry("$BACKGROUND_DIR/$name"))
                 imageStore.backgroundFile(name).inputStream().use { it.copyTo(zip) }
+                zip.closeEntry()
+            }
+
+            fonts.forEach { file ->
+                zip.putNextEntry(ZipEntry("$FONT_DIR/${file.name}"))
+                file.inputStream().use { it.copyTo(zip) }
                 zip.closeEntry()
             }
 
@@ -244,6 +254,7 @@ class BackupManager(
 
             replaceDir(File(staging, IMAGE_DIR), File(context.filesDir, IMAGE_DIR))
             replaceDir(File(staging, BACKGROUND_DIR), File(context.filesDir, BACKGROUND_DIR))
+            replaceDir(File(staging, FONT_DIR), File(context.filesDir, FONT_DIR))
 
             staging.deleteRecursively()
             info
@@ -313,6 +324,10 @@ class BackupManager(
                                     images++
                                 }
                             }
+                            row.font?.takeIf { it.startsWith(PREFIX_FONT_FILE) }?.let { font ->
+                                val name = font.removePrefix(PREFIX_FONT_FILE)
+                                copyIfMissing(File(staging, FONT_DIR), name, fontStore.file(name))
+                            }
                             row.background?.takeIf { it.startsWith(PREFIX_CUSTOM) }?.let { background ->
                                 val name = background.removePrefix(PREFIX_CUSTOM)
                                 copyIfMissing(
@@ -367,6 +382,7 @@ class BackupManager(
                         name == KEY_FILE -> File(staging, KEY_FILE)
                         name.startsWith("$IMAGE_DIR/") && !name.contains("..") -> File(staging, name)
                         name.startsWith("$BACKGROUND_DIR/") && !name.contains("..") -> File(staging, name)
+                        name.startsWith("$FONT_DIR/") && !name.contains("..") -> File(staging, name)
                         else -> null
                     }
                     if (target != null) {
@@ -553,7 +569,9 @@ class BackupManager(
         const val KEY_FILE = "key.bin"
         const val IMAGE_DIR = "images"
         const val BACKGROUND_DIR = "backgrounds"
+        const val FONT_DIR = "fonts"
         const val PREFIX_CUSTOM = "img:"
+        const val PREFIX_FONT_FILE = "file:"
 
         /** 只接受这种文件名，顺带挡掉 `../` 这类路径。 */
         val SAFE_NAME = Regex("^[A-Za-z0-9._-]+$")

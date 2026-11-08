@@ -1,8 +1,8 @@
 # 存档记录
 
-存档时间：**2026-11-08 18:40**
+存档时间：**2026-11-08 18:49**
 
-版本：**1.0.0-debug**（versionCode 72）｜ 数据库 **v9（SQLCipher + FTS5）** ｜ 纯 64 位（arm64-v8a）
+版本：**1.0.1-debug**（versionCode 73）｜ 数据库 **v9（SQLCipher + FTS5）** ｜ 纯 64 位（arm64-v8a）
 ｜ 含应用锁 / 恢复码 / 自动备份 / 跨设备备份 / 崩溃日志 / 正文字体
 
 > 1.0 = 第一个"可以天天用"的存档。只保留调试版：正式包（`com.synn.diary`）未构建、未安装。
@@ -11,19 +11,19 @@
 
 | 文件 | 体积 | SHA-256 |
 |---|---|---|
-| `dist/日记-1.0.0-debug.apk` | 21 MB | `00bdc2727ff2d4aa9d61d5a1a57dc8fc60770ec088aaf75abe01dc3b1b6e8363` |
-| `dist/日记-1.0.0-源码.zip` | 6.4 MB | `eacc78903371cb0c605969af9b71b94bb3a448994831e77ddd73f20fa1f08392` |
+| `dist/日记-1.0.1-debug.apk` | 21 MB | `037d05e431e31777892c939199bfbb3e045916b4ac5b6c5fad2702db79ec89bf` |
+| `dist/日记-1.0.1-源码.zip` | 6.5 MB | `7a4e2ff2c2552a6763b86103dfeabb0bc015aab77322a830f9b30382f0dc5e25` |
 
 包名 `com.synn.diary.debug`，用 `keystore/debug.keystore` 签名，`install -r` 覆盖安装可保住数据。
 
 ## 代码状态
 
-源码快照（**不含 `.git`**，tag 与分支历史留在工作目录的仓库里，当前 `v1.0.0`）：
+源码快照（**不含 `.git`**，tag 与分支历史留在工作目录的仓库里，当前 `v1.0.1`）：
 
 - `app/` 源码 + `app/schemas/`（Room 导出的 schema，当前 `9.json`）
 - `docs/` 界面截图 + `plan.md`（产品方案）+ `database.md`（表结构、单位约定、FTS、备份格式）
 - `keystore/debug.keystore`（签名，随仓库保留以便继续覆盖升级）
-- `CHANGELOG.md`（0.1 → 1.0.0 的完整改动）
+- `CHANGELOG.md`（0.1 → 1.0.1 的完整改动）
 
 分支：
 

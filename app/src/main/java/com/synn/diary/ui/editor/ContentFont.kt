@@ -42,7 +42,7 @@ sealed interface ContentFont {
     data object WenKai : ContentFont {
         override val id = "wenkai"
         override val label = "霞鹜文楷"
-        override fun family(store: FontStore) = FontFamily(Font(R.font.lxgw_wenkai))
+        override fun family(store: FontStore) = wenkaiFamily
     }
 
     data class Custom(val fileName: String) : ContentFont {
@@ -55,6 +55,9 @@ sealed interface ContentFont {
         private const val PREFIX = "file:"
 
         private val cache = mutableMapOf<String, FontFamily>()
+
+        // 自带字体只解析一次：弹窗里有样本、正文也会用到，别每次重组都 new
+        private val wenkaiFamily by lazy { FontFamily(Font(R.font.lxgw_wenkai)) }
 
         /** 已导入的字体在第一次用到时解析，之后复用。 */
         fun custom(fileName: String, store: FontStore): Custom {

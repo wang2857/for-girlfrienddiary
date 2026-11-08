@@ -452,3 +452,24 @@ APK 从 13 MB 涨到约 17 MB（字体占 3.4 MB）。
 体验（切后台隐私挡板 / 深浅色 / 崩溃日志）
 
 已知欠账见 README §6：没有测试和 CI、没有云同步、Markdown 只存不渲染、提醒与自动备份时间不可调等。
+
+## 1.0.1 — 审查后的小修与优化
+
+**一个真问题：备份漏了导入的字体**
+
+`files/fonts/` 没进备份包，恢复到新设备后，`file:<文件名>` 指向不存在的文件，正文会静默退回系统字体。
+现在 zip 里多了 `fonts/`，覆盖导入整目录还原，合并导入按 `file:` 引用补缺。
+
+**优化**
+
+- 搜索长度按**码点**算（`codePointCount`）：一个 emoji 在 UTF-16 里是 2 个 length，
+  原来"两个 emoji"会被当成 4 个字走 FTS，trigram 匹配不到；现在正确退回 LIKE
+- 自带文楷的 `FontFamily` 只解析一次（`by lazy`），弹窗样本不再每次重组都 new
+- `AppContainer` 里 `addMigrations` 的缩进和重复注释整理
+
+**版本信息核对**
+
+- `versionCode 73 / versionName 1.0.1`，调试包 `1.0.1-debug`；设置页的版本号是运行时读 PackageManager，不会写死
+- 文档对齐：README / ARCHIVE / CHANGELOG / `docs/database.md` 都是 1.0.1 + 数据库 v9
+- schema 导出的真实路径是 `app/schemas/com.synn.diary.data.db.AppDatabase/9.json`（Room 多套了一层目录），
+  README 和 database.md 原来写成 `app/schemas/9.json`，已改

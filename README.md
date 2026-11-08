@@ -2,7 +2,7 @@
 
 安卓本地日记 App。只为自己用：不上架、不联网、数据全在手机上。
 
-**当前版本 1.0.0（仅调试版）** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
+**当前版本 1.0.1（仅调试版）** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
 ｜ 数据库 v9 ｜ 变更历史见 [CHANGELOG.md](CHANGELOG.md) ｜ 存档信息见 [ARCHIVE.md](ARCHIVE.md)
 
 ---
@@ -105,7 +105,7 @@
 
 ### 备份与整理
 
-- **导出备份**：设置 → 数据 → 导出备份，把 `diary.db` + 正文图片 + 自定义纸张打成一个 zip（走系统文件选择器，存哪都行）
+- **导出备份**：设置 → 数据 → 导出备份，把 `diary.db` + 正文图片 + 自定义纸张 + **导入的字体**打成一个 zip（走系统文件选择器，存哪都行）
 - **导入备份（覆盖）**：选 zip → 确认 → 自动重启。包里带 `manifest.json`（条数、库版本），版本比本机新会拒绝导入
 - **换机可恢复**：导出时用**恢复码**把数据库口令再封一份放进包里（`key.bin`）。
   在新手机导入时输入当初抄下的 16 位恢复码，就地把备份库换成本机口令再写回——
@@ -212,7 +212,7 @@ deletedAt / weatherText / locationText / latitude / longitude / background / fon
 - 另有 `tag`、`entry_tag` 两张业务表（外键 `CASCADE`），以及全文索引虚拟表 `entry_fts`（FTS5 trigram）
 - 图片**不进库**：正文用 `[[img:<文件名>|宽度%|对齐]]` 标记，文件在 `files/images/`；
   自定义纸张是 `background = img:<文件名>`，文件在 `files/backgrounds/`
-- `exportSchema = true`，schema JSON 在 `app/schemas/`（当前 `8.json`）
+- `exportSchema = true`，schema JSON 在 `app/schemas/com.synn.diary.data.db.AppDatabase/`（当前 `9.json`）
 - v8 之前没有迁移链（删表重建）；**v8→v9 加字体列这条是正经迁移**（`ALTER TABLE ADD COLUMN`），
   以后新增字段都按这个来`
 

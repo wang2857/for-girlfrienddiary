@@ -161,7 +161,8 @@ v3 加过一张 `attachment` 表记录"某条日记用过哪些图"，但从来�
 **v8 之前不保留升级链**（app 没发布过，旧库删掉重建）。从 **v8→v9 开始走正常迁移**：
 加 `font` 列用的是 `ALTER TABLE entry ADD COLUMN font TEXT`，旧数据原样保留。
 
-`app/schemas/<版本>.json` 是 Room 编译期导出的权威结构。
+`app/schemas/com.synn.diary.data.db.AppDatabase/<版本>.json` 是 Room 编译期导出的权威结构
+（Room 会按数据库类名再套一层目录，不是直接放在 `schemas/` 下）。
 
 ### 全文索引（v8 新增）
 
