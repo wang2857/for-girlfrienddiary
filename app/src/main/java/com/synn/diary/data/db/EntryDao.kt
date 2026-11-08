@@ -82,6 +82,10 @@ interface EntryDao {
     @Query("SELECT * FROM entry WHERE id = :id")
     suspend fun get(id: Long): EntryEntity?
 
+    /** 合并导入用：一次拿全所有 uuid，判断"这篇是不是已经有了"。 */
+    @Query("SELECT uuid FROM entry")
+    suspend fun allUuids(): List<String>
+
     /** 只写环境字段，故意不动 updatedAt —— 否则"抓天气"会篡改用户对这条日记的最后修改时间。 */
     @Query(
         """

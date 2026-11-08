@@ -6,8 +6,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [EntryEntity::class, TagEntity::class, EntryTagEntity::class, AttachmentEntity::class],
-    version = 6,
+    entities = [EntryEntity::class, TagEntity::class, EntryTagEntity::class],
+    version = 7,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -16,9 +16,19 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun tagDao(): TagDao
 
-    abstract fun attachmentDao(): AttachmentDao
-
     companion object {
+
+        /**
+         * v6 → v7：删掉 attachment 表。
+         *
+         * 它从加进来那天起就只写不读——图片的归属一直由正文里的 `[[img:…]]` 标记决定，
+         * 孤儿清理扫的是目录，不是这张表。留着只会慢慢和真实状态对不上。
+         */
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP TABLE IF EXISTS `attachment`")
+            }
+        }
 
         /**
          * v1 → v2：只新增 tag / entry_tag 两张表，entry 表一个字段都没动。

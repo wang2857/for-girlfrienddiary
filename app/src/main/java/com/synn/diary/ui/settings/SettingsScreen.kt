@@ -68,8 +68,9 @@ fun SettingsScreen(
     container: AppContainer,
     onDisableLock: () -> Unit,
     onOpenTrash: () -> Unit,
-    onExport: (android.net.Uri) -> Unit,
+    onExport: (android.net.Uri, () -> Unit) -> Unit,
     onImport: (android.net.Uri) -> Unit,
+    onMergeImport: (android.net.Uri, () -> Unit) -> Unit,
     pendingImport: kotlinx.coroutines.flow.StateFlow<android.net.Uri?>,
     onPickImport: (android.net.Uri) -> Unit,
     onClearPendingImport: () -> Unit,
@@ -138,13 +139,26 @@ fun SettingsScreen(
         androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/zip"),
     ) { uri ->
         onExternalUiEnd()
-        if (uri != null) { busy = "正在导出…"; onExport(uri) }
+        if (uri != null) {
+            busy = "正在导出…"
+            // 导完把 busy 清掉，否则这一页会一直卡在"正在导出"，后面的按钮也点不动
+            onExport(uri) { busy = null }
+        }
     }
     val importLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
     ) { uri ->
         onExternalUiEnd()
         if (uri != null) onPickImport(uri)
+    }
+    val mergeLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        onExternalUiEnd()
+        if (uri != null) {
+            busy = "正在合并…"
+            onMergeImport(uri) { busy = null }
+        }
     }
 
     // 选完文件先弹确认框（覆盖是破坏性操作），确认后才真正导入
@@ -326,7 +340,7 @@ fun SettingsScreen(
 
             SettingActionRow(
                 title = "导出备份",
-                subtitle = busy ?: "把日记和图片打包成一个 zip",
+                subtitle = if (busy == "正在导出…") "正在导出…" else "把日记和图片打包成一个 zip",
                 actionLabel = "导出",
                 onClick = {
                     if (busy == null) {
@@ -344,6 +358,18 @@ fun SettingsScreen(
                     if (busy == null) {
                         onExternalUiStart()
                         importLauncher.launch(arrayOf("application/zip"))
+                    }
+                },
+            )
+
+            SettingActionRow(
+                title = "合并导入",
+                subtitle = if (busy == "正在合并…") "正在合并…" else "只把备份里没有的日记加进来，不删本机的东西",
+                actionLabel = "合并",
+                onClick = {
+                    if (busy == null) {
+                        onExternalUiStart()
+                        mergeLauncher.launch(arrayOf("application/zip"))
                     }
                 },
             )

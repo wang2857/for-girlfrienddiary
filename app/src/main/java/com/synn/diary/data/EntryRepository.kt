@@ -1,7 +1,5 @@
 package com.synn.diary.data
 
-import com.synn.diary.data.db.AttachmentDao
-import com.synn.diary.data.db.AttachmentEntity
 import com.synn.diary.data.db.EntryDao
 import com.synn.diary.data.db.EntryEntity
 import com.synn.diary.data.db.DayMoodRow
@@ -18,7 +16,6 @@ import kotlinx.coroutines.flow.Flow
 class EntryRepository(
     private val entryDao: EntryDao,
     private val tagDao: TagDao,
-    private val attachmentDao: AttachmentDao,
     private val imageStore: ImageStore,
 ) {
 
@@ -154,22 +151,6 @@ class EntryRepository(
     ) {
         entryDao.updateWeather(id, weatherText, locationText, latitude, longitude)
     }
-
-    suspend fun addAttachment(entryId: Long, relPath: String) {
-        attachmentDao.insert(
-            AttachmentEntity(
-                entryId = entryId,
-                relPath = relPath,
-                createdAt = System.currentTimeMillis(),
-            ),
-        )
-    }
-
-    suspend fun removeAttachment(relPath: String) {
-        attachmentDao.deleteByPath(relPath)
-    }
-
-    suspend fun attachmentsOf(entryId: Long): List<AttachmentEntity> = attachmentDao.forEntry(entryId)
 
     suspend fun softDelete(id: Long) {
         val current = entryDao.get(id) ?: return

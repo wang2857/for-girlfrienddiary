@@ -160,18 +160,12 @@ class EditorViewModel(
         viewModelScope.launch {
             val fileName = imageStore.import(uri)
             android.util.Log.d("EditorVM", "importImage uri=$uri -> $fileName")
-            if (fileName != null) {
-                repository.addAttachment(entryId, fileName)
-            }
             onImported(fileName)
         }
     }
 
     fun removeImage(fileName: String) {
-        viewModelScope.launch {
-            repository.removeAttachment(fileName)
-            imageStore.delete(fileName)
-        }
+        viewModelScope.launch { imageStore.delete(fileName) }
     }
 
     fun addTag(name: String) {

@@ -117,6 +117,11 @@ class ImageStore(context: Context) {
     fun listFiles(): Map<String, Long> =
         dir.listFiles()?.filter { it.isFile }?.associate { it.name to it.lastModified() } ?: emptyMap()
 
+    /** 自定义纸张目录里的文件，导出备份时要一起打包。 */
+    fun listBackgrounds(): Map<String, Long> =
+        backgroundDir.listFiles()?.filter { it.isFile }?.associate { it.name to it.lastModified() }
+            ?: emptyMap()
+
     suspend fun delete(name: String) = withContext(Dispatchers.IO) {
         file(name).delete()
     }

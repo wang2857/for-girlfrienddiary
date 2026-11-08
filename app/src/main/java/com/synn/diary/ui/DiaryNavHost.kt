@@ -164,17 +164,37 @@ fun DiaryNavHost(container: AppContainer) {
             SettingsScreen(
                 container = container,
                 onOpenTrash = { navController.navigate("trash") },
-                onExport = { uri ->
+                onExport = { uri, done ->
                     scope.launch {
                         val result = container.backupManager.export(uri)
                         Toast.makeText(
                             context,
                             result.fold(
-                                { "已导出：${it.entryCount} 条日记、${it.imageCount} 张图片" },
+                                {
+                                    "已导出：${it.entryCount} 条日记、${it.imageCount} 张图片、${it.backgroundCount} 张纸张"
+                                },
                                 { "导出失败：${it.message}" },
                             ),
                             Toast.LENGTH_LONG,
                         ).show()
+                        done()
+                    }
+                },
+                onMergeImport = { uri, done ->
+                    scope.launch {
+                        val result = container.backupManager.merge(uri)
+                        Toast.makeText(
+                            context,
+                            result.fold(
+                                {
+                                    "已合并：新增 ${it.added} 条，跳过 ${it.skipped} 条" +
+                                        if (it.images > 0) "，补了 ${it.images} 张图" else ""
+                                },
+                                { "合并失败：${it.message}" },
+                            ),
+                            Toast.LENGTH_LONG,
+                        ).show()
+                        done()
                     }
                 },
                 pendingImport = container.pendingImportUri,
