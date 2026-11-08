@@ -12,7 +12,7 @@
 | 文件 | 体积 | SHA-256 |
 |---|---|---|
 | `dist/日记-0.30.0-debug.apk` | 15.7 MB | `7c68a928902632763cb46393e1ec287d50185ddc8fa150159676ea66c561dc75` |
-| `dist/日记-0.30.0-源码.zip` | 4.9 MB | `b1ecd909cfdc867360df0e4e795b05bed56d90d6e56455325f8295b983c65851` |
+| `dist/日记-0.30.0-源码.zip` | 4.9 MB | `2bb258a7f5db13d054420b958e31509a1dfea024bb2e2dc158570006dbcd2877` |
 
 包名 `com.synn.diary.debug`，用 `keystore/debug.keystore` 签名，`install -r` 覆盖安装可保住数据。
 
