@@ -1,5 +1,6 @@
 package com.synn.diary.data
 
+import androidx.core.content.edit
 import android.content.Context
 
 /** 回收站里保留多久后自动清理。 */
@@ -9,7 +10,7 @@ class TrashSettings(context: Context) {
 
     var retentionDays: Int
         get() = prefs.getInt(KEY_DAYS, DEFAULT_DAYS)
-        set(value) = prefs.edit().putInt(KEY_DAYS, value).apply()
+        set(value) = prefs.edit { putInt(KEY_DAYS, value) }
 
     private companion object {
         const val KEY_DAYS = "retention_days"

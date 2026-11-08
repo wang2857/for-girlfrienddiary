@@ -1,5 +1,6 @@
 package com.synn.diary.ui
 
+import androidx.core.content.edit
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -127,7 +128,7 @@ fun DiaryNavHost(container: AppContainer) {
                     ) == PackageManager.PERMISSION_GRANTED
                     val askedBefore = prefs.getBoolean(KEY_LOCATION_ASKED, false)
                     if (!granted && !askedBefore) {
-                        prefs.edit().putBoolean(KEY_LOCATION_ASKED, true).apply()
+                        prefs.edit { putBoolean(KEY_LOCATION_ASKED, true) }
                         container.externalUiInProgress = true
                         locationLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
                     } else {

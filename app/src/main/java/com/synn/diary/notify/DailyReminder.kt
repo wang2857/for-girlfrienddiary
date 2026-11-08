@@ -1,10 +1,13 @@
 package com.synn.diary.notify
 
+import androidx.core.content.edit
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import android.util.Log
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -33,7 +36,7 @@ object DailyReminder {
         prefs(context).getBoolean(KEY_ENABLED, false)
 
     fun setEnabled(context: Context, enabled: Boolean) {
-        prefs(context).edit().putBoolean(KEY_ENABLED, enabled).apply()
+        prefs(context).edit { putBoolean(KEY_ENABLED, enabled) }
     }
 
     /** 通知权限是否可用（API 33+ 需要运行时授权）。 */
@@ -50,7 +53,6 @@ object DailyReminder {
     }
 
     fun ensureChannel(context: Context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         if (manager.getNotificationChannel(CHANNEL_ID) != null) return
         manager.createNotificationChannel(
@@ -70,7 +72,10 @@ object DailyReminder {
      * 发提醒。用固定的 notification id，重复提醒会覆盖而不是堆叠
      * （OriginOS 单应用通知上限 50 条）。
      */
+    @SuppressLint("MissingPermission")
     fun notify(context: Context) {
+        // 没权限就直接不发；发通知本身也包在 runCatching 里兜底
+        if (!canNotify(context)) return
         if (!canNotify(context)) return
         ensureChannel(context)
 
@@ -100,7 +105,7 @@ object DailyReminder {
 
         runCatching {
             NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
-        }
+        }.onFailure { Log.w("DailyReminder", "notify failed", it) }
     }
 
     /** 下一次提醒的时刻（今天没到点就是今天，过了就是明天）。 */

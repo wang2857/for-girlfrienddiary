@@ -385,3 +385,36 @@ APK 从 13 MB 涨到约 17 MB（字体占 3.4 MB）。
 - 之前合并导入拒绝带 `key.bin` 的包（因为要先用恢复码解开备份库口令）；现在支持：
   选中文件后先 inspect，需要恢复码就弹输入框，解开后用那把口令读备份库
 - 0.36.1 的换机恢复（整包导入）不变；两条恢复路径现在都能跨设备
+
+## 0.38.0 — 代码质量：lint 清零 + 两个真 bug
+
+跑了一遍 `lintDebug`，从 3 个 Error / 26 个 Warning 清到 **0 Error**，其中两个是真会崩的问题：
+
+**1. Android 8–11 打开日记会崩（NewApi）**
+
+`Dates.time()` 用了 `LocalTime.ofInstant`，那是 API 31 才有的方法。minSdk 是 26，
+在 Android 8.0–11 上渲染任何一条日记的时间都会 `NoSuchMethodError`。
+改成 `Instant.ofEpochMilli(ms).atZone(zone).toLocalTime()`。
+
+**2. 通知没有权限检查（MissingPermission）**
+
+`DailyReminder.notify` 直接调 `NotificationManagerCompat.notify`，现在先 `canNotify()` 兜底，
+并保留 runCatching + 日志。
+
+**3. 动态注册广播的 flag（UnspecifiedRegisterReceiverFlag）**
+
+`MemoryPressureBridge` 原先只在 API 33+ 分支传 `RECEIVER_EXPORTED`，改成
+`ContextCompat.registerReceiver(..., RECEIVER_EXPORTED)` 一处搞定（vivo 的 TRIM/KILL 是系统服务发的）。
+
+**顺手清理**
+
+- 15 处 `prefs.edit().xxx().apply()` → `edit { }`（commit 的那处用 `edit(commit = true)`）
+- `ensureChannel` 里多余的 SDK_INT < O 判断（minSdk 26）
+- manifest 的 `enableOnBackInvokedCallback` 加 `tools:targetApi="33"`
+- lint 里关掉 `ChromeOsAbiSupport`（只打 arm64 是 vivo 64 位要求，不是漏了 x86_64）
+
+**另外两处改进**
+
+- `BackupManager.inspect` 不再把整包解压到 cache，只扫 zip 条目、只读清单——几百 MB 的备份
+  不会为了弹个"要不要恢复码"的对话框先复制一遍
+- 跨设备恢复换完口令后会**再验一次**：能用本机口令打开、条数对得上才写回

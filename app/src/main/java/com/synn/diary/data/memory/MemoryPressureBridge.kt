@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import androidx.core.content.ContextCompat
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -69,11 +70,15 @@ class MemoryPressureBridge(private val context: Context) {
             addAction(ACTION_TRIM)
             addAction(ACTION_KILL)
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(receiver, filter, null, handler, Context.RECEIVER_EXPORTED)
-        } else {
-            context.registerReceiver(receiver, filter, null, handler)
-        }
+        // vivo 的 TRIM/KILL 是系统服务发过来的私有广播，必须 RECEIVER_EXPORTED 才收得到
+        ContextCompat.registerReceiver(
+            context,
+            receiver,
+            filter,
+            null,
+            handler,
+            ContextCompat.RECEIVER_EXPORTED,
+        )
         registered = true
         Log.i(TAG, "memory pressure bridge initialized")
     }

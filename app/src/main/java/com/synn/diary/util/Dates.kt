@@ -4,7 +4,6 @@ import android.icu.util.ChineseCalendar
 import java.time.Instant
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
@@ -34,8 +33,9 @@ object Dates {
 
     fun fullDate(epochDay: Long): String = date(epochDay).format(fullDateFormatter)
 
+    // LocalTime.ofInstant 是 API 31 才有的；这里走通用的 atZone，minSdk 26 也能用
     fun time(epochMillis: Long): String =
-        LocalTime.ofInstant(Instant.ofEpochMilli(epochMillis), zone).format(timeFormatter)
+        Instant.ofEpochMilli(epochMillis).atZone(zone).toLocalTime().format(timeFormatter)
 
     fun weekdayShort(epochDay: Long): String = date(epochDay).format(weekdayShortFormatter)
 

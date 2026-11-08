@@ -178,6 +178,8 @@ fun SettingsScreen(
 
     androidx.compose.runtime.LaunchedEffect(pending) {
         val uri = pending ?: return@LaunchedEffect
+        needsRecoveryCode = false
+        recoveryInput = ""
         needsRecoveryCode = container.backupManager.inspect(uri)
             .getOrNull()?.needsRecoveryCode == true
         recoveryInput = ""

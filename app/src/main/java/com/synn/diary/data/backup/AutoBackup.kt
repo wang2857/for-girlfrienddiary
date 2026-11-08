@@ -1,5 +1,6 @@
 package com.synn.diary.data.backup
 
+import androidx.core.content.edit
 import android.content.Context
 import android.content.SharedPreferences
 import com.synn.diary.data.AppContainer
@@ -37,7 +38,7 @@ object AutoBackup {
     fun isEnabled(context: Context): Boolean = prefs(context).getBoolean(KEY_ENABLED, false)
 
     fun setEnabled(context: Context, enabled: Boolean) {
-        prefs(context).edit().putBoolean(KEY_ENABLED, enabled).apply()
+        prefs(context).edit { putBoolean(KEY_ENABLED, enabled) }
     }
 
     fun lastRunAt(context: Context): Long = prefs(context).getLong(KEY_LAST_AT, 0L)
@@ -58,10 +59,10 @@ object AutoBackup {
             val result = runCatching {
                 container.backupManager.exportToFile(File(dir(context), "diary-${stamp()}.zip"))
             }
-            prefs(context).edit()
-                .putLong(KEY_LAST_AT, System.currentTimeMillis())
-                .putString(KEY_LAST_NOTE, result.fold({ "成功" }, { it.message ?: "失败" }))
-                .apply()
+            prefs(context).edit {
+                putLong(KEY_LAST_AT, System.currentTimeMillis())
+                putString(KEY_LAST_NOTE, result.fold({ "成功" }, { it.message ?: "失败" }))
+            }
             if (result.isSuccess) prune(context)
             result
         }

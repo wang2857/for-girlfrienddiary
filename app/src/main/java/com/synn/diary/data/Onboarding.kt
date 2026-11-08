@@ -1,5 +1,6 @@
 package com.synn.diary.data
 
+import androidx.core.content.edit
 import android.content.Context
 
 /** 首次安装的引导是否走完了。 */
@@ -13,6 +14,6 @@ object Onboarding {
 
     fun markDone(context: Context) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putBoolean(KEY_DONE, true).apply()
+            .edit { putBoolean(KEY_DONE, true) }
     }
 }

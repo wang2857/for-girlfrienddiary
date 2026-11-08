@@ -1,5 +1,6 @@
 package com.synn.diary.data.db
 
+import androidx.core.content.edit
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
@@ -34,6 +35,7 @@ object DbKey {
     private const val PASSPHRASE_BYTES = 32
 
     /** 拿口令；没有就生成一个。返回 null 表示 Keystore 不可用。 */
+    // 必须先落盘再建库，所以用 commit 版本的 edit
     fun passphrase(context: Context): String? = runCatching {
         val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val wrapped = prefs.getString(KEY_WRAPPED, null)
@@ -44,7 +46,7 @@ object DbKey {
                 .also { SecureRandom().nextBytes(it) }
                 .joinToString("") { byte -> "%02x".format(byte) }
             // commit() 而不是 apply()：第一次建库前必须已经落盘
-            prefs.edit().putString(KEY_WRAPPED, seal(hex)).commit()
+            prefs.edit(commit = true) { putString(KEY_WRAPPED, seal(hex)) }
             hex
         }
     }.getOrNull()

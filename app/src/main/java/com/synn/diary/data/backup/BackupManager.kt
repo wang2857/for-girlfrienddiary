@@ -150,16 +150,36 @@ class BackupManager(
         return info
     }
 
-    /** 只看一眼备份包：版本、以及是不是需要恢复码。 */
+    /**
+     * 只看一眼备份包：版本、以及是不是需要恢复码。
+     *
+     * 只扫 zip 条目、只读 `manifest.json`，不解包到磁盘——几百 MB 的备份
+     * 不该为了弹个对话框先复制一遍。
+     */
     suspend fun inspect(uri: Uri): Result<BackupInspection> = withContext(Dispatchers.IO) {
         runCatching {
-            val staging = unzipToStaging(uri)
-            val manifest = File(staging, MANIFEST)
-            require(manifest.exists()) { "不是有效的备份包（缺少清单）" }
-            val json = JSONObject(manifest.readText())
+            var manifestText: String? = null
+            var hasKey = false
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                ZipInputStream(input.buffered()).use { zip ->
+                    var entry: ZipEntry? = zip.nextEntry
+                    while (entry != null) {
+                        when (entry.name) {
+                            MANIFEST -> manifestText = zip.readBytes().toString(Charsets.UTF_8)
+                            KEY_FILE -> hasKey = true
+                            else -> Unit
+                        }
+                        zip.closeEntry()
+                        if (manifestText != null && hasKey) break
+                        entry = zip.nextEntry
+                    }
+                }
+            } ?: error("无法读取该文件")
+
+            val json = JSONObject(manifestText ?: error("不是有效的备份包（缺少清单）"))
             BackupInspection(
                 schemaVersion = json.optInt("schemaVersion", 0),
-                needsRecoveryCode = File(staging, KEY_FILE).exists(),
+                needsRecoveryCode = hasKey,
             )
         }
     }
@@ -208,6 +228,11 @@ class BackupManager(
                 val backupPassphrase = BackupKey.unwrap(keyFile.readBytes(), code)
                     ?: error("恢复码不对，解不开这个备份")
                 rekeyBackupDatabase(db, backupPassphrase)
+                // 换完口令必须能用本机口令打开、条数对得上，否则宁可失败也别写回
+                val verified = countEntries(db.path, dbPassphrase)
+                require(info.entryCount <= 0 || verified == info.entryCount) {
+                    "恢复失败：备份库条数对不上（清单 ${info.entryCount}，实际 $verified）"
+                }
             }
 
             // 关库再覆盖，否则 Room 的打开连接会写回旧页
@@ -234,77 +259,78 @@ class BackupManager(
     suspend fun merge(uri: Uri, recoveryCode: String? = null): Result<MergeInfo> =
         withContext(Dispatchers.IO) {
             runCatching {
-            val staging = unzipToStaging(uri)
-            val db = File(staging, DB_NAME)
-            require(db.exists() && db.length() > 0) { "不是有效的备份包（缺少数据库）" }
-            require(!DbEncryption.isPlaintext(db)) {
-                "这是旧版本导出的明文备份，当前版本只接受加密备份"
-            }
-
-            // 跨设备备份：先用恢复码把备份库的口令解出来，才有法读
-            val keyFile = File(staging, KEY_FILE)
-            val sourcePassphrase = if (keyFile.exists()) {
-                val code = recoveryCode?.trim().orEmpty()
-                require(code.isNotEmpty()) { "这个备份来自别的设备，需要恢复码" }
-                BackupKey.unwrap(keyFile.readBytes(), code) ?: error("恢复码不对，解不开这个备份")
-            } else {
-                dbPassphrase
-            }
-            val source = openSource(db, sourcePassphrase)
-            try {
-                val rows = readSourceEntries(source)
-                val tagNames = readSourceTags(source)
-
-                var added = 0
-                var skipped = 0
-                var images = 0
-
-                database.withTransaction {
-                    val entryDao = database.entryDao()
-                    val tagDao = database.tagDao()
-                    val knownUuids = entryDao.allUuids().toHashSet()
-
-                    rows.forEach { row ->
-                        if (row.trashed || row.uuid.isBlank() || !knownUuids.add(row.uuid)) {
-                            skipped++
-                            return@forEach
-                        }
-
-                        val newId = entryDao.insert(row.toEntity())
-                        added++
-
-                        tagNames[row.sourceId].orEmpty().forEach { rawName ->
-                            val name = rawName.trim()
-                            if (name.isEmpty()) return@forEach
-                            val tagId = tagDao.findByName(name)?.id ?: tagDao.insert(
-                                TagEntity(name = name, createdAt = System.currentTimeMillis()),
-                            )
-                            if (tagId > 0) entryDao.attachTag(EntryTagEntity(newId, tagId))
-                        }
-
-                        BodyMarkers.allImages(row.body).forEach { name ->
-                            if (copyIfMissing(File(staging, IMAGE_DIR), name, imageStore.file(name))) {
-                                images++
-                            }
-                        }
-                        row.background?.takeIf { it.startsWith(PREFIX_CUSTOM) }?.let { background ->
-                            val name = background.removePrefix(PREFIX_CUSTOM)
-                            copyIfMissing(
-                                File(staging, BACKGROUND_DIR),
-                                name,
-                                imageStore.backgroundFile(name),
-                            )
-                        }
-                    }
+                val staging = unzipToStaging(uri)
+                val db = File(staging, DB_NAME)
+                require(db.exists() && db.length() > 0) { "不是有效的备份包（缺少数据库）" }
+                require(!DbEncryption.isPlaintext(db)) {
+                    "这是旧版本导出的明文备份，当前版本只接受加密备份"
                 }
 
-                staging.deleteRecursively()
-                MergeInfo(added = added, skipped = skipped, images = images)
-            } finally {
-                source.close()
+                // 跨设备备份：先用恢复码把备份库的口令解出来，才有法读
+                val keyFile = File(staging, KEY_FILE)
+                val sourcePassphrase = if (keyFile.exists()) {
+                    val code = recoveryCode?.trim().orEmpty()
+                    require(code.isNotEmpty()) { "这个备份来自别的设备，需要恢复码" }
+                    BackupKey.unwrap(keyFile.readBytes(), code) ?: error("恢复码不对，解不开这个备份")
+                } else {
+                    dbPassphrase
+                }
+
+                val source = openSource(db, sourcePassphrase)
+                try {
+                    val rows = readSourceEntries(source)
+                    val tagNames = readSourceTags(source)
+
+                    var added = 0
+                    var skipped = 0
+                    var images = 0
+
+                    database.withTransaction {
+                        val entryDao = database.entryDao()
+                        val tagDao = database.tagDao()
+                        val knownUuids = entryDao.allUuids().toHashSet()
+
+                        rows.forEach { row ->
+                            if (row.trashed || row.uuid.isBlank() || !knownUuids.add(row.uuid)) {
+                                skipped++
+                                return@forEach
+                            }
+
+                            val newId = entryDao.insert(row.toEntity())
+                            added++
+
+                            tagNames[row.sourceId].orEmpty().forEach { rawName ->
+                                val name = rawName.trim()
+                                if (name.isEmpty()) return@forEach
+                                val tagId = tagDao.findByName(name)?.id ?: tagDao.insert(
+                                    TagEntity(name = name, createdAt = System.currentTimeMillis()),
+                                )
+                                if (tagId > 0) entryDao.attachTag(EntryTagEntity(newId, tagId))
+                            }
+
+                            BodyMarkers.allImages(row.body).forEach { name ->
+                                if (copyIfMissing(File(staging, IMAGE_DIR), name, imageStore.file(name))) {
+                                    images++
+                                }
+                            }
+                            row.background?.takeIf { it.startsWith(PREFIX_CUSTOM) }?.let { background ->
+                                val name = background.removePrefix(PREFIX_CUSTOM)
+                                copyIfMissing(
+                                    File(staging, BACKGROUND_DIR),
+                                    name,
+                                    imageStore.backgroundFile(name),
+                                )
+                            }
+                        }
+                    }
+
+                    staging.deleteRecursively()
+                    MergeInfo(added = added, skipped = skipped, images = images)
+                } finally {
+                    source.close()
+                }
             }
         }
-    }
 
     /** 把备份库的加密口令换成本机的，之后才能直接放回 databases/。 */
     private fun rekeyBackupDatabase(file: File, backupPassphrase: String) {
@@ -467,6 +493,27 @@ class BackupManager(
         target.parentFile?.mkdirs()
         source.copyTo(target, overwrite = true)
         return true
+    }
+
+    /** 用指定口令打开某个库，读出 entry 条数（读不出来就抛，交给调用方兜底）。 */
+    private fun countEntries(path: String, passphrase: String): Int {
+        val db = net.zetetic.database.sqlcipher.SQLiteDatabase.openDatabase(
+            path,
+            passphrase,
+            null,
+            net.zetetic.database.sqlcipher.SQLiteDatabase.OPEN_READONLY,
+            null,
+        )
+        return try {
+            val cursor = db.rawQuery("SELECT count(*) FROM entry", null)
+            try {
+                if (cursor.moveToFirst()) cursor.getInt(0) else 0
+            } finally {
+                cursor.close()
+            }
+        } finally {
+            db.close()
+        }
     }
 
     private fun replaceDir(source: File?, target: File) {

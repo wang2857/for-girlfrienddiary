@@ -1,5 +1,6 @@
 package com.synn.diary.data.lock
 
+import androidx.core.content.edit
 import android.content.Context
 import android.content.SharedPreferences
 import java.security.MessageDigest
@@ -21,26 +22,26 @@ class LockStore(context: Context) {
 
     var enabled: Boolean
         get() = prefs.getBoolean(KEY_ENABLED, false)
-        set(value) = prefs.edit().putBoolean(KEY_ENABLED, value).apply()
+        set(value) = prefs.edit { putBoolean(KEY_ENABLED, value) }
 
     var biometricEnabled: Boolean
         get() = prefs.getBoolean(KEY_BIOMETRIC, false)
-        set(value) = prefs.edit().putBoolean(KEY_BIOMETRIC, value).apply()
+        set(value) = prefs.edit { putBoolean(KEY_BIOMETRIC, value) }
 
     /** 默认不许截屏；用户明确打开才放行。 */
     var allowScreenshots: Boolean
         get() = prefs.getBoolean(KEY_ALLOW_SCREENSHOTS, false)
-        set(value) = prefs.edit().putBoolean(KEY_ALLOW_SCREENSHOTS, value).apply()
+        set(value) = prefs.edit { putBoolean(KEY_ALLOW_SCREENSHOTS, value) }
 
     fun hasPin(): Boolean = prefs.contains(KEY_HASH)
 
     fun setPin(pin: String) {
         val salt = ByteArray(SALT_BYTES).also { SecureRandom().nextBytes(it) }
         val hash = hash(pin, salt)
-        prefs.edit()
-            .putString(KEY_SALT, encode(salt))
-            .putString(KEY_HASH, encode(hash))
-            .apply()
+        prefs.edit {
+            putString(KEY_SALT, encode(salt))
+            putString(KEY_HASH, encode(hash))
+        }
     }
 
     fun verifyPin(pin: String): Boolean {
@@ -58,10 +59,10 @@ class LockStore(context: Context) {
 
     fun setRecoveryCode(code: String) {
         val salt = ByteArray(SALT_BYTES).also { SecureRandom().nextBytes(it) }
-        prefs.edit()
-            .putString(KEY_RECOVERY_SALT, encode(salt))
-            .putString(KEY_RECOVERY_HASH, encode(hash(RecoveryCode.normalize(code), salt)))
-            .apply()
+        prefs.edit {
+            putString(KEY_RECOVERY_SALT, encode(salt))
+            putString(KEY_RECOVERY_HASH, encode(hash(RecoveryCode.normalize(code), salt)))
+        }
     }
 
     fun verifyRecoveryCode(code: String): Boolean {
@@ -78,9 +79,9 @@ class LockStore(context: Context) {
     fun canRevealRecoveryCode(): Boolean = prefs.contains(KEY_RECOVERY_SEALED)
 
     fun sealRecoveryCode(code: String): Boolean = runCatching {
-        prefs.edit()
-            .putString(KEY_RECOVERY_SEALED, RecoverySealer.seal(RecoveryCode.normalize(code)))
-            .apply()
+        prefs.edit {
+            putString(KEY_RECOVERY_SEALED, RecoverySealer.seal(RecoveryCode.normalize(code)))
+        }
         true
     }.getOrDefault(false)
 
@@ -89,7 +90,7 @@ class LockStore(context: Context) {
     }.getOrNull()
 
     fun clear() {
-        prefs.edit().clear().apply()
+        prefs.edit { clear() }
         // 密钥跟着一起删：留着密文也没用了，还省得以后有人拿它做文章
         RecoverySealer.forget()
     }
