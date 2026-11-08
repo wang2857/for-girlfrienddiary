@@ -418,3 +418,13 @@ APK 从 13 MB 涨到约 17 MB（字体占 3.4 MB）。
 - `BackupManager.inspect` 不再把整包解压到 cache，只扫 zip 条目、只读清单——几百 MB 的备份
   不会为了弹个"要不要恢复码"的对话框先复制一遍
 - 跨设备恢复换完口令后会**再验一次**：能用本机口令打开、条数对得上才写回
+
+## 0.38.1 — 图片欠账：自定义纸张的孤儿文件
+
+- `attachment` 表那条老欠账早在 0.32.0（v7）就还了：表删掉，图片归属只认正文的
+  `[[img:]]` 标记 + 目录，不再维护一张可能和真实状态对不上的表
+- 但清理一直只扫 `files/images/`：把纸张从"自定义照片"换成别的时候，旧背景图会永远留在
+  `files/backgrounds/` 里。现在 `cleanupOrphanImages` 把 `background = img:<文件名>` 也算引用，
+  没人引用的背景图同样在启动时清掉（1 小时内的新文件不动）
+- README 里过期的地方一并修：数据模型还写着 v6 + `attachment`、迁移链到 6、APK 13 MB、
+  native 库"只有 libandroidx.graphics.path.so"

@@ -126,6 +126,10 @@ class ImageStore(context: Context) {
         file(name).delete()
     }
 
+    suspend fun deleteBackground(name: String) = withContext(Dispatchers.IO) {
+        backgroundFile(name).delete()
+    }
+
     private fun calculateInSampleSize(width: Int, height: Int, maxEdge: Int): Int {
         var sample = 1
         var longest = maxOf(width, height)

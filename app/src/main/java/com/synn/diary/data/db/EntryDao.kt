@@ -142,6 +142,10 @@ interface EntryDao {
     @Query("SELECT body FROM entry")
     suspend fun allBodies(): List<String>
 
+    /** 纸张字段：自定义纸张是 `img:<文件名>`，清理孤儿背景图要用。 */
+    @Query("SELECT background FROM entry")
+    suspend fun allBackgrounds(): List<String?>
+
     @Query(
         """
         SELECT count(*) FROM entry

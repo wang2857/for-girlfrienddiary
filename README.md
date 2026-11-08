@@ -2,7 +2,7 @@
 
 安卓本地日记 App。只为自己用：不上架、不联网、数据全在手机上。
 
-**当前版本 0.38.0（仅调试版）** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
+**当前版本 0.38.1（仅调试版）** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
 ｜ 数据库 v8 ｜ 变更历史见 [CHANGELOG.md](CHANGELOG.md) ｜ 存档信息见 [ARCHIVE.md](ARCHIVE.md)
 
 ---
@@ -161,7 +161,7 @@ cd diary
 | | debug（日常） | release（按需） |
 |---|---|---|
 | 包名 | `com.synn.diary.debug` | `com.synn.diary` |
-| 体积 | 13 MB | 9.0 MB |
+| 体积 | 约 21 MB（含 SQLCipher） | 约 9 MB（无 SQLCipher 时的旧数据） |
 | 保留产物 | 是，`dist/` | 否，构建后按需处理 |
 
 - release 沿用 `keystore/debug.keystore`（不上架，没另建正式签名）
@@ -204,12 +204,15 @@ app/src/main/java/com/synn/diary/
 
 ### 数据模型
 
-`entry` 表（v6）：`id / uuid / entryDate(epochDay) / createdAt / updatedAt / title / body / mood /
+`entry` 表（v8）：`id / uuid / entryDate(epochDay) / createdAt / updatedAt / title / body / mood /
 deletedAt / weatherText / locationText / latitude / longitude / background / favorite / locked`
 
-- 另有 `tag`、`entry_tag`、`attachment` 三张表，外键 `CASCADE`
-- `exportSchema = true`，schema JSON 在 `app/schemas/`；迁移 SQL 照它核对，不凭记忆写
-- 迁移链：1→2（标签表）· 2→3（天气/位置）· 3→4（附件表）· 4→5（纸张）· 5→6（收藏、上锁）
+- 另有 `tag`、`entry_tag` 两张业务表（外键 `CASCADE`），以及全文索引虚拟表 `entry_fts`（FTS5 trigram）
+- 图片**不进库**：正文用 `[[img:<文件名>|宽度%|对齐]]` 标记，文件在 `files/images/`；
+  自定义纸张是 `background = img:<文件名>`，文件在 `files/backgrounds/`
+- `exportSchema = true`，schema JSON 在 `app/schemas/`（当前 `8.json`）
+- **v8 起没有迁移链**：app 没发布过，版本对不上就删表重建（`fallbackToDestructiveMigration`），
+  真要发布时再从 v8 往后补迁移
 
 ### 天气与定位
 
@@ -230,6 +233,10 @@ deletedAt / weatherText / locationText / latitude / longitude / background / fav
 - 正文存 `[[img:<文件名>|宽度%|对齐]]` 标记，编辑器解析成图片块插在文本块之间
 - 点图片在手指位置弹浮层：**宽度滑块 20%–100%** + 左/中/右对齐
 - 列表卡片显示正文第一张图（裁剪 150dp）+ 去掉标记的摘要
+- 图片**不建元数据表**（尺寸、大小都不落库）：展示只认正文标记，清理靠"扫正文 + 扫目录"，
+  少一张可能和真实状态对不上的表
+- 启动时清理孤儿文件，**正文图和自定义纸张都清**：删掉 `[[img:]]` 标记、或把纸张从自定义换掉之后，
+  旧文件会在下次启动被删（1 小时内的新文件不动）
 
 ### 几个刻意的设计
 
@@ -266,14 +273,15 @@ deletedAt / weatherText / locationText / latitude / longitude / background / fav
 
 ```
 $ zipinfo -1 app-debug.apk | grep -E "\.so$"
-lib/arm64-v8a/libandroidx.graphics.path.so      ← 只有这一个
+lib/arm64-v8a/libandroidx.graphics.path.so
+lib/arm64-v8a/libsqlcipher.so                   ← SQLCipher（约 5.8 MB），全包最大的一个
 $ dumpsys package … | grep primaryCpuAbi
 primaryCpuAbi=arm64-v8a   secondaryCpuAbi=null  ← 纯 64 位运行
 ```
 
 - 无 RenderScript 位码（`.bc` 文件数 0）
 - `./build.sh check64Bit` 在构建期兜底：混进 32 位 so 直接失败
-- 代价：x86_64 模拟器装不上
+- 代价：x86_64 模拟器装不上（lint 的 ChromeOsAbiSupport 已显式关掉）
 - native 库 LOAD 段按 `0x4000` 对齐，满足 16KB 页设备
 
 ### 4.3 小窗（[doc/582](https://dev.vivo.com.cn/documentCenter/doc/582)）
@@ -321,6 +329,7 @@ primaryCpuAbi=arm64-v8a   secondaryCpuAbi=null  ← 纯 64 位运行
 |---|---|
 | 数据库迁移 v1→…→v6 | ✅ 每步都实测过；v5→v6 在真机上 15 条记录完整 |
 | 新建 + 自动保存 + 保存返回列表 | ✅ |
+| 孤儿背景图清理 | ✅ 塞一张 2 小时前的 `orphan-test.jpg` 进 `files/backgrounds/`，重启后被删；仍被引用的背景图留着 |
 | 工具栏横线开关 | ✅ 点一下横线消失、按钮变灰「横线 · 关」；再点回来就恢复；重开应用仍记得 |
 | 横线跟纸张的关系 | ✅ 格纸上不画线，此时打开开关会提示原因；切回纯色纸横线立刻回来 |
 | 天气自动记录 | ✅ 新建 19 秒后写入「小雨 15° · 30.29°N 120.16°E」 |
@@ -369,7 +378,8 @@ primaryCpuAbi=arm64-v8a   secondaryCpuAbi=null  ← 纯 64 位运行
 - 旧版本的明文备份（0.32.0 及更早导出的 zip）**不能导入**，会提示"这是旧版本导出的明文备份"
 
 - 导入仍不能"挑一条恢复"，只能整包合并或整包覆盖
-- `attachment` 表只写不读：除了 `attachmentsOf()` 没有任何调用方，图片全靠正文 `[[img:]]` 标记和目录扫描
+- 图片没有元数据（尺寸/大小/哈希都不落库），也没有相册页：想要"按图找日记""清理大图"这类功能，
+  得先补一张 `image` 表并让它真的被读写，而不是再留一张只写不读的表
 - 提醒固定 21:00、自动备份固定 3:00，都不可调
 - WorkManager 的 24 小时周期会随时间漂移，不是严格到点
 

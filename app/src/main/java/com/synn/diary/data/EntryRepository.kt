@@ -15,6 +15,8 @@ import com.synn.diary.data.media.ImageStore
 import androidx.sqlite.db.SimpleSQLiteQuery
 import kotlinx.coroutines.flow.Flow
 
+private const val PREFIX_CUSTOM_BACKGROUND = "img:"
+
 class EntryRepository(
     private val entryDao: EntryDao,
     private val tagDao: TagDao,
@@ -67,12 +69,24 @@ class EntryRepository(
         val referenced = entryDao.allBodies()
             .flatMap { BodyMarkers.allImages(it) }
             .toSet()
+        // 自定义纸张也要算：换纸之后旧背景图就没人引用了
+        val referencedBackgrounds = entryDao.allBackgrounds()
+            .filterNotNull()
+            .filter { it.startsWith(PREFIX_CUSTOM_BACKGROUND) }
+            .map { it.removePrefix(PREFIX_CUSTOM_BACKGROUND) }
+            .toSet()
         // 刚导入还没写进正文的文件别动（留 1 小时缓冲）
         val cutoff = System.currentTimeMillis() - 60 * 60 * 1000
         var removed = 0
         imageStore.listFiles().forEach { (name, modified) ->
             if (name !in referenced && modified < cutoff) {
                 imageStore.delete(name)
+                removed++
+            }
+        }
+        imageStore.listBackgrounds().forEach { (name, modified) ->
+            if (name !in referencedBackgrounds && modified < cutoff) {
+                imageStore.deleteBackground(name)
                 removed++
             }
         }
