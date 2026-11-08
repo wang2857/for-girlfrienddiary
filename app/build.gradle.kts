@@ -15,8 +15,8 @@ android {
         applicationId = "com.synn.diary"
         minSdk = 26
         targetSdk = 36
-        versionCode = 63
-        versionName = "0.32.0"
+        versionCode = 64
+        versionName = "0.33.0"
 
         ndk {
             // 只打 64 位包：vivo 等国内商店早已只收 64 位，32 位 so 留着只是白白增大体积
@@ -106,6 +106,9 @@ dependencies {
     implementation(libs.androidx.exifinterface)
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.work)
+
+    // 数据库加密：SQLCipher 的 Android 封装，Room 通过 openHelperFactory 接入
+    implementation(libs.sqlcipher.android)
 }
 
 /**

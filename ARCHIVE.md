@@ -1,8 +1,8 @@
 # 存档记录
 
-存档时间：**2026-11-08 17:12**
+存档时间：**2026-11-08 17:24**
 
-版本：**0.32.0-debug**（versionCode 63）｜ 数据库 **v7** ｜ 纯 64 位（arm64-v8a）
+版本：**0.33.0-debug**（versionCode 64）｜ 数据库 **v7（SQLCipher 加密）** ｜ 纯 64 位（arm64-v8a）
 ｜ 含每日提醒、恢复码、自动备份、崩溃日志
 
 > 只保留调试版：正式包（`com.synn.diary`）未构建、未安装，需要时再加。
@@ -11,19 +11,19 @@
 
 | 文件 | 体积 | SHA-256 |
 |---|---|---|
-| `dist/日记-0.32.0-debug.apk` | 15.8 MB | `b2e63b73ebc5a8a745ddef04f8e9c7b32a430a47b4d5bd89a79a11eaf5be25aa` |
-| `dist/日记-0.32.0-源码.zip` | 6.4 MB | `8397d154738d0cbff208cf861e2c190d26a3f6567ef3762684a7af4f42b4ed83` |
+| `dist/日记-0.33.0-debug.apk` | 21.4 MB | `6aefb9e9b1d384d5c797cd31315259e06ad79ff35693ca5b80bab6899a44723b` |
+| `dist/日记-0.33.0-源码.zip` | 6.4 MB | `6a98705b71e28e01d281afdd17a17115d6358c4e81fa15abe4070954db446273` |
 
 包名 `com.synn.diary.debug`，用 `keystore/debug.keystore` 签名，`install -r` 覆盖安装可保住数据。
 
 ## 代码状态
 
-源码快照（**不含 `.git`**，tag 历史留在工作目录的仓库里，当前 `v0.32.0`）：
+源码快照（**不含 `.git`**，tag 历史留在工作目录的仓库里，当前 `v0.33.0`）：
 
 - `app/` 源码 + `app/schemas/`（Room 导出的 6 个版本 schema）
 - `docs/` 界面截图 + `plan.md`（产品方案原始文档）+ `database.md`（表结构与单位约定）
 - `keystore/debug.keystore`（签名，随仓库保留以便继续覆盖升级）
-- `CHANGELOG.md`（0.1 → 0.32.0 的完整改动）
+- `CHANGELOG.md`（0.1 → 0.33.0 的完整改动）
 
 ## 如何重新构建
 
@@ -67,4 +67,5 @@ cd diary
   封一份明文，设置里「查看」需先验 4 位密码。能拿 root / adb 备份的人可以解开，数据库本身也是明文
 - 指纹走 `androidx.biometric`；默认 `FLAG_SECURE` 禁截屏
 - 切后台时先盖不透明挡板（与窗口同色）、`onStop` 再上锁，回到前台不会闪出正文
-- **数据库本身仍是明文 SQLite**——应用锁挡的是界面，不是文件
+- **数据库用 SQLCipher 加密**：口令是随机 32 字节，被 AndroidKeyStore 的 AES-256-GCM 裹住，
+  跟 4 位 PIN 无关；备份包里的库也是密文，换机/重装后口令丢失就打不开

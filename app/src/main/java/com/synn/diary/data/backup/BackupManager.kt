@@ -2,7 +2,7 @@ package com.synn.diary.data.backup
 
 import android.content.Context
 import android.database.Cursor
-import android.database.sqlite.SQLiteDatabase
+import com.synn.diary.data.db.DbEncryption
 import android.net.Uri
 import androidx.room.withTransaction
 import com.synn.diary.data.body.BodyMarkers
@@ -46,6 +46,7 @@ class BackupManager(
     private val context: Context,
     private val database: AppDatabase,
     private val imageStore: ImageStore,
+    private val dbPassphrase: String,
 ) {
 
     private val dbFile: File get() = context.getDatabasePath(DB_NAME)
@@ -178,7 +179,8 @@ class BackupManager(
             val db = File(staging, DB_NAME)
             require(db.exists() && db.length() > 0) { "不是有效的备份包（缺少数据库）" }
 
-            val source = SQLiteDatabase.openDatabase(db.path, null, SQLiteDatabase.OPEN_READONLY)
+            // 备份包里的库可能是加密的（同一台设备导出的），也可能是老版本的明文
+            val source = openSource(db)
             try {
                 val rows = readSourceEntries(source)
                 val tagNames = readSourceTags(source)
@@ -303,9 +305,41 @@ class BackupManager(
         )
     }
 
-    private fun readSourceEntries(source: SQLiteDatabase): List<SourceEntry> {
+    /** 备份里的库可能就是加密库；按文件头判断用哪套打开方式。 */
+    private fun openSource(db: File): Source {
+        return if (DbEncryption.isPlaintext(db)) {
+            val plain = android.database.sqlite.SQLiteDatabase.openDatabase(
+                db.path,
+                null,
+                android.database.sqlite.SQLiteDatabase.OPEN_READONLY,
+            )
+            object : Source {
+                override fun query(sql: String): Cursor = plain.rawQuery(sql, null)
+                override fun close() = plain.close()
+            }
+        } else {
+            val encrypted = net.zetetic.database.sqlcipher.SQLiteDatabase.openDatabase(
+                db.path,
+                dbPassphrase,
+                null,
+                net.zetetic.database.sqlcipher.SQLiteDatabase.OPEN_READONLY,
+                null,
+            )
+            object : Source {
+                override fun query(sql: String): Cursor = encrypted.rawQuery(sql, null)
+                override fun close() = encrypted.close()
+            }
+        }
+    }
+
+    private interface Source {
+        fun query(sql: String): Cursor
+        fun close()
+    }
+
+    private fun readSourceEntries(source: Source): List<SourceEntry> {
         val rows = mutableListOf<SourceEntry>()
-        source.rawQuery("SELECT * FROM entry", null).use { c ->
+        source.query("SELECT * FROM entry").use { c ->
             while (c.moveToNext()) {
                 rows += SourceEntry(
                     sourceId = c.longOr("id") ?: -1,
@@ -330,12 +364,11 @@ class BackupManager(
         return rows
     }
 
-    private fun readSourceTags(source: SQLiteDatabase): Map<Long, List<String>> {
+    private fun readSourceTags(source: Source): Map<Long, List<String>> {
         val map = mutableMapOf<Long, MutableList<String>>()
-        source.rawQuery(
+        source.query(
             "SELECT et.entryId AS entryId, t.name AS name FROM entry_tag et " +
                 "JOIN tag t ON t.id = et.tagId",
-            null,
         ).use { c ->
             while (c.moveToNext()) {
                 val entryId = c.longOr("entryId") ?: continue

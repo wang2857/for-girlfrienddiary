@@ -332,3 +332,16 @@ APK 从 13 MB 涨到约 17 MB（字体占 3.4 MB）。
 
 - 新增 `docs/database.md`：单位约定（`entryDate` 是天、时间戳是毫秒）、表结构、备份包格式、
   迁移链 v1→v7、几个常用 sqlite 查询
+
+## 0.33.0 — 数据库加密（SQLCipher）
+
+- 接入 `net.zetetic:sqlcipher-android`，Room 走 `SupportOpenHelperFactory(口令)`；
+  包里只多一个 `libsqlcipher.so`（arm64），APK 从 15.8 MB 涨到约 21 MB
+- 口令是随机 32 字节（转 hex），用 AndroidKeyStore 的 AES-256-GCM 裹起来存 `db_security`；
+  **不从 4 位密码派生**——1 万种可能，离线几分钟就爆破了，加密等于白做
+- 老明文库首次启动原地迁移：读明文的 schema → 建同结构的加密库 → 逐表搬行 → 建索引 →
+  校验 `entry` 条数一致 → 删旧 WAL/SHM → 原子替换。任何一步失败都保留原库
+- 一开始试的是 `ATTACH + sqlcipher_export`，在真机上稳定报 `unable to open database (code 14)`，
+  所以改成"照抄一遍"的笨办法
+- 备份/合并导入都能自动识别备份里是加密库还是老明文库，分别用 SQLCipher / 明文方式打开；
+  覆盖导入一个老的明文备份后，下次启动会自动重新加密

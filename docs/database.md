@@ -1,13 +1,14 @@
-# 数据库格式（v7）
+# 数据库格式（v7，SQLCipher 加密）
 
 这页写给"三个月后想用 sqlite3 直接查点什么"的自己。所有内容都对着设备上真实的库核对过。
 
 ## 1. 文件在哪
 
 ```
-/data/data/com.synn.diary.debug/databases/diary.db      ← 主库（明文 SQLite）
-                                        diary.db-wal    ← 还没合并的写入
+/data/data/com.synn.diary.debug/databases/diary.db      ← 主库（SQLCipher 加密，v0.33.0 起）
+                                        diary.db-wal
                                         diary.db-shm
+/data/data/com.synn.diary.debug/shared_prefs/db_security.xml  ← 被 Keystore 包裹的口令
 /data/data/com.synn.diary.debug/files/images/           ← 正文图片
 /data/data/com.synn.diary.debug/files/backgrounds/      ← 自定义纸张
 /data/data/com.synn.diary.debug/files/backup/           ← 自动备份（每天一份）
@@ -23,6 +24,15 @@ sqlite3 diary.db ".schema"
 ```
 
 **`-wal` 必须一起拿**：最近写的内容还在 WAL 里，只拿主库会看到旧数据。
+
+**但 0.33.0 起拿到的都是密文**：文件头不再是 `SQLite format 3`，`sqlite3 diary.db` 会报
+`file is not a database`。要读内容只有两条路：
+
+1. 用应用自己的导出功能拿到 zip（里面还是加密库，只能在**同一台设备、同一次安装**里导入）
+2. 在设备上用 SQLCipher 命令行 + 口令打开——口令是随机 32 字节，被 AndroidKeyStore 的
+   AES-256-GCM 裹在 `db_security.xml` 里，**取不出来**（这正是加密的意义）
+
+想做临时排查，可以把 `DbKey` 改成打印口令的调试版，排查完撤掉。
 
 ## 2. 单位约定
 
@@ -175,7 +185,15 @@ SELECT id, title, datetime(deletedAt/1000,'unixepoch','+8 hours') AS deleted
 FROM entry WHERE deletedAt IS NOT NULL ORDER BY deletedAt ASC LIMIT 10;
 ```
 
-## 8. 已知
+## 8. 加密与迁移
 
-- **库没有加密**：应用锁挡的是界面，root / adb 备份能直接读正文
+- 口令：随机 32 字节 → hex → 用 Keystore AES-GCM 封装后存 `db_security.xml`；
+  **不跟 4 位 PIN 绑定**（PIN 只有 1 万种，派生密钥等于没加密）
+- 从明文库升级：首次启动时读明文 schema → 建同结构加密库 → 逐表搬行 → 建索引 →
+  校验条数 → 删旧 `-wal/-shm` → 原子替换；任一步失败都保留原库
+- 备份包里的库就是加密库本身：**换机 / 重装后口令丢失，备份也打不开**
 - 搜索是 `LIKE '%关键词%'`，数据量大再换 FTS5
+
+## 9. 已知
+
+- 备份的可移植性问题（见 §8）：想要"换机也能恢复"，得把口令用恢复码再包一层带进备份，还没做

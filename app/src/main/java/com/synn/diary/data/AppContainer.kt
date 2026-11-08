@@ -4,6 +4,9 @@ import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.room.Room
 import com.synn.diary.data.db.AppDatabase
+import com.synn.diary.data.db.DbEncryption
+import com.synn.diary.data.db.DbKey
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import com.synn.diary.data.media.ImageStore
 import com.synn.diary.data.backup.BackupManager
 import com.synn.diary.data.lock.LockManager
@@ -24,20 +27,35 @@ class AppContainer(context: Context) {
 
     private val appContext = context.applicationContext
 
-    private val database: AppDatabase = Room.databaseBuilder(
-        appContext,
-        AppDatabase::class.java,
-        "diary.db",
-    )
-        .addMigrations(
+    /** 数据库口令：随机生成、Keystore 裹起来，跟 4 位密码无关。 */
+    private val dbPassphrase: String = DbKey.passphrase(appContext)
+        ?: error("拿不到数据库口令（Keystore 不可用）")
+
+    private val database: AppDatabase = run {
+        // SQLCipher 的 native 库得自己加载，AAR 不会替你做
+        System.loadLibrary("sqlcipher")
+        // 老版本留下的是明文库，第一次启动时在这里原地转成加密库
+        DbEncryption.migrateIfPlaintext(
+            appContext.getDatabasePath("diary.db"),
+            dbPassphrase,
+            appContext.cacheDir,
+        )
+        Room.databaseBuilder(
+            appContext,
+            AppDatabase::class.java,
+            "diary.db",
+        )
+            .openHelperFactory(SupportOpenHelperFactory(dbPassphrase.toByteArray()))
+            .addMigrations(
             AppDatabase.MIGRATION_1_2,
             AppDatabase.MIGRATION_2_3,
             AppDatabase.MIGRATION_3_4,
             AppDatabase.MIGRATION_4_5,
             AppDatabase.MIGRATION_5_6,
             AppDatabase.MIGRATION_6_7,
-        )
-        .build()
+            )
+            .build()
+    }
 
     val weatherService = WeatherService(appContext)
 
@@ -47,7 +65,7 @@ class AppContainer(context: Context) {
 
     val editorSettings = EditorSettings(appContext)
 
-    val backupManager = BackupManager(appContext, database, imageStore)
+    val backupManager = BackupManager(appContext, database, imageStore, dbPassphrase)
 
     /**
      * 选完文件到确认导入之间会经历"切后台 → 应用锁上锁 → 回来重建界面"，
