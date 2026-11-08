@@ -243,7 +243,7 @@ fun SettingsScreen(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "日记 0.26.2 · 本地存储 · 不上传",
+                text = "日记 0.27.0 · 本地存储 · 不上传",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

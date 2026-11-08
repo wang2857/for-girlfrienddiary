@@ -45,6 +45,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -241,6 +242,7 @@ fun EditorScreen(
                     else paperColor,
                 ),
         ) {
+        val ruleColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.03f)
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -248,7 +250,21 @@ fun EditorScreen(
                 .padding(horizontal = 20.dp)
                 // 整页一起滚：分屏/小窗时可用高度很小，
                 // 如果情绪、标签、标题固定占位，正文会被挤成 0 高，根本没法打字。
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                // 极淡的横向行线，像横线本；纯装饰，不参与布局
+                .drawBehind {
+                    val step = 36.dp.toPx()
+                    var y = step
+                    while (y < size.height) {
+                        drawLine(
+                            color = ruleColor,
+                            start = Offset(0f, y),
+                            end = Offset(size.width, y),
+                            strokeWidth = 1.dp.toPx(),
+                        )
+                        y += step
+                    }
+                },
         ) {
             // 日期、天气、地点合并成一行，居中放在顶栏下面
             var showCaptureHint by remember { mutableStateOf(false) }

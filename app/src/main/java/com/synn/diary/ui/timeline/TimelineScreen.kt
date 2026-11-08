@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
@@ -91,9 +92,17 @@ fun TimelineScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("日记") },
+                title = {
+                    Text(
+                        text = "日记",
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                },
                 actions = {
-                    TextButton(onClick = onOpenSearch) { Text("搜索") }
+                    // 用图标代替"搜索"两个字：顶栏少一半文字噪音
+                    TextButton(onClick = onOpenSearch) {
+                        Text(text = "🔍", fontSize = 17.sp)
+                    }
                 },
             )
         },
@@ -152,7 +161,7 @@ fun TimelineScreen(
                             is TimelineRow.Month -> if (!showYearHeaders) {
                                 stickyHeader(key = row.key) {
                                     GroupHeader(
-                                        title = "${row.month}月",
+                                        title = monthLabel(row.month),
                                         count = row.count,
                                         expanded = row.expanded,
                                         style = MaterialTheme.typography.titleSmall,
@@ -164,7 +173,7 @@ fun TimelineScreen(
                             } else {
                                 item(key = row.key) {
                                     GroupHeader(
-                                        title = "${row.month}月",
+                                        title = monthLabel(row.month),
                                         count = row.count,
                                         expanded = row.expanded,
                                         style = MaterialTheme.typography.titleSmall,
@@ -311,21 +320,29 @@ private fun GroupHeader(
             .then(if (sticky) Modifier.background(MaterialTheme.colorScheme.background) else Modifier)
             .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
-            .padding(vertical = 8.dp),
+            .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // 折叠指示：一个缓慢旋转的小箭头，展开时几乎看不出是控件
         Text(
-            text = if (expanded) "▾" else "▸",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(18.dp),
+            text = "›",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.outline,
+            modifier = Modifier
+                .width(16.dp)
+                .graphicsLayer { rotationZ = if (expanded) 90f else 0f },
         )
-        Text(text = title, style = style, color = color)
-        Spacer(Modifier.width(8.dp))
+        Text(
+            text = title,
+            style = style.copy(letterSpacing = 0.6.sp),
+            color = color,
+        )
+        Spacer(Modifier.weight(1f))
+        // 篇数靠右、更淡，不跟标题抢视线
         Text(
             text = "$count 篇",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.outline,
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.7f),
         )
     }
 }
@@ -343,40 +360,36 @@ private fun WeekHeader(
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
-            .padding(start = 18.dp, top = 2.dp, bottom = 2.dp),
+            .padding(start = 16.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = if (expanded) "▾" else "▸",
+            text = "›",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.outline,
-            modifier = Modifier.width(16.dp),
+            modifier = Modifier
+                .width(14.dp)
+                .graphicsLayer { rotationZ = if (expanded) 90f else 0f },
         )
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.4.sp),
+            color = if (isCurrent) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.width(6.dp))
-        if (isCurrent) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(horizontal = 6.dp, vertical = 1.dp),
-            ) {
-                Text(
-                    text = "本周",
-                    fontSize = 9.sp,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-            }
-            Spacer(Modifier.width(6.dp))
-        }
+        Spacer(Modifier.width(10.dp))
+        // 一条细线代替原来的"本周"胶囊，安静地分隔日期和篇数
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(1.dp)
+                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)),
+        )
+        Spacer(Modifier.width(10.dp))
         Text(
             text = "$count 篇",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.outline,
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.7f),
         )
     }
 }
@@ -466,6 +479,16 @@ private fun FilterBar(
 
 @Composable
 private fun EmptyTimeline(filtering: Boolean) {
+    // 按时间说一句人话，比"还没有记录"有温度
+    val hour = java.time.LocalTime.now().hour
+    val greeting = when {
+        hour in 5..10 -> "早安"
+        hour in 11..13 -> "中午好"
+        hour in 14..17 -> "下午好"
+        hour in 18..22 -> "晚上好"
+        else -> "夜深了"
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -474,15 +497,27 @@ private fun EmptyTimeline(filtering: Boolean) {
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = if (filtering) "这个标签下还没有记录" else "还没有记录",
+            text = if (filtering) "🌿" else "🌱",
+            style = MaterialTheme.typography.displaySmall,
+        )
+        Spacer(Modifier.height(18.dp))
+        Text(
+            text = if (filtering) "这些条件下还没有记录" else "$greeting，今天还没写呢",
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(10.dp))
         Text(
-            text = if (filtering) "点「全部」回到所有记录。" else "点右下角「写一笔」，今天就有第一行了。",
+            text = if (filtering) "点「全部」回到所有记录。" else "哪怕一句话也算。",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.outline,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
     }
+}
+
+/** 11 → 十一月：跟农历的"九月"呼应，比 "11月" 更像日记本。 */
+private fun monthLabel(month: Int): String {
+    val digits = listOf("一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二")
+    return (digits.getOrNull(month - 1) ?: "$month") + "月"
 }
