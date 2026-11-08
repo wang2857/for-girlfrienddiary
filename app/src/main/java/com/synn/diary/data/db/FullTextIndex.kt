@@ -23,7 +23,7 @@ object FullTextIndex {
         private set
 
     fun install(db: SupportSQLiteDatabase) {
-        if (enabled) return
+        // 不能"装过一次就跳过"：每个库都要有自己的 entry_fts，测试里会开多个库
         runCatching {
             db.execSQL(
                 "CREATE VIRTUAL TABLE IF NOT EXISTS entry_fts " +
@@ -55,6 +55,7 @@ object FullTextIndex {
             enabled = true
             Log.i(TAG, "FTS5 索引就绪（trigram）")
         }.onFailure {
+            enabled = false
             Log.e(TAG, "FTS5 不可用，搜索退回 LIKE", it)
         }
     }

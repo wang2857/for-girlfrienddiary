@@ -501,3 +501,27 @@ APK 从 13 MB 涨到约 17 MB（字体占 3.4 MB）。
 **其它**
 
 - `unitTests.isReturnDefaultValues = true`，android.util.Log 之类的桩不会让 JVM 测试炸
+
+## 1.0.3 — 数据库测试 + 备份往返测试
+
+**Robolectric（JVM，37 个用例）**
+
+- `Migration8To9Test`：拿 `app/schemas/.../8.json` 建出真实的老库，跑 `MIGRATION_8_9`，
+  断言 `font` 列出现、旧数据还在
+- `TimelineFilterTest`：空壳、空白壳、回收站、只收藏、按天统计，逐条钉住 SQL 里的过滤条件
+- 顺带发现一个**真 bug**：SQLite 的 `trim(x)` 只去空格，`\n\t\r` 会留下去，
+  "只敲了回车"的条目会在时间线上变成一张空卡片。改成
+  `trim(x, ' ' || char(9) || char(10) || char(13))` 后过滤正确（6 处查询统一）
+
+**仪器测试（androidTest，3 个用例）**
+
+- `FtsSyncTest`：FTS5 触发器三件事——插入进索引、`UPDATE OF title, body` 重写索引、删除清索引；
+  多命中按时间倒序。也验证了"两字查询在 trigram 下确实命不中"（生产里会退回 LIKE）
+- `BackupRoundTripTest`：真的建一条带图片引用 + 自定义字体的日记 → 导出 zip（断言里面有
+  `diary.db` / `images/` / `fonts/`）→ `purge` 连图片一起删 → 从 zip 合并 → 日记、图片、字体都回来
+
+**其它**
+
+- `FullTextIndex.install` 不再"装过一次就永远跳过"：每个库都建自己的 `entry_fts`（测试里会开多个库）
+- 测试基建：Robolectric 的 `user.home`/本地仓库重定向到 `build/`（沙盒里 `~` 不可写）；
+  测试 Application 换成空的 `android.app.Application`，避开真实的 Keystore/SQLCipher 初始化

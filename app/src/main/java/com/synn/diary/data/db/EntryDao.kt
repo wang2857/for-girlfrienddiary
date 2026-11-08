@@ -12,6 +12,19 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface EntryDao {
 
+    companion object {
+        /**
+         * "这条不是空壳"。
+         *
+         * 注意：SQLite 的 `trim(x)` 只去空格（0x20），`\n` `\t` `\r` 都留着。
+         * 只写空格+回车的条目会被 `length(trim(...)) > 0` 误判成有内容，
+         * 时间线上就多一张空卡片。这里显式把四种空白字符都去掉。
+         */
+        private const val NOT_BLANK =
+            "(length(trim(title, ' ' || char(9) || char(10) || char(13))) > 0 " +
+                "OR length(trim(body, ' ' || char(9) || char(10) || char(13))) > 0)"
+    }
+
     /**
      * 时间线：过滤已删除，以及"打开过但一个字没写"的空壳条目。
      * 空壳过滤放在这里有讲究——新建即入库能让每次按键都自动保存，代价是会留下一堆空行，
@@ -19,28 +32,18 @@ interface EntryDao {
      */
     @Transaction
     @Query(
-        """
-        SELECT * FROM entry
-        WHERE deletedAt IS NULL
-          AND (length(trim(title)) > 0 OR length(trim(body)) > 0)
-          AND (:onlyFavorites = 0 OR favorite = 1)
-        ORDER BY entryDate DESC, createdAt DESC
-        LIMIT :limit
-        """,
+        "SELECT * FROM entry WHERE deletedAt IS NULL AND " + NOT_BLANK +
+            " AND (:onlyFavorites = 0 OR favorite = 1) " +
+            "ORDER BY entryDate DESC, createdAt DESC LIMIT :limit",
     )
     fun observeTimeline(onlyFavorites: Int, limit: Int): Flow<List<EntryWithTags>>
 
     @Transaction
     @Query(
-        """
-        SELECT * FROM entry
-        WHERE deletedAt IS NULL
-          AND (length(trim(title)) > 0 OR length(trim(body)) > 0)
-          AND id IN (SELECT entryId FROM entry_tag WHERE tagId = :tagId)
-          AND (:onlyFavorites = 0 OR favorite = 1)
-        ORDER BY entryDate DESC, createdAt DESC
-        LIMIT :limit
-        """,
+        "SELECT * FROM entry WHERE deletedAt IS NULL AND " + NOT_BLANK +
+            " AND id IN (SELECT entryId FROM entry_tag WHERE tagId = :tagId)" +
+            " AND (:onlyFavorites = 0 OR favorite = 1) " +
+            "ORDER BY entryDate DESC, createdAt DESC LIMIT :limit",
     )
     fun observeByTag(tagId: Long, onlyFavorites: Int, limit: Int): Flow<List<EntryWithTags>>
 
@@ -48,14 +51,10 @@ interface EntryDao {
     /** LIKE 兜底：短查询、或设备上 FTS5 装不上时用。 */
     @Transaction
     @Query(
-        """
-        SELECT * FROM entry
-        WHERE deletedAt IS NULL
-          AND (length(trim(title)) > 0 OR length(trim(body)) > 0)
-          AND locked = 0
-          AND (title LIKE '%' || :keyword || '%' OR body LIKE '%' || :keyword || '%')
-        ORDER BY entryDate DESC, createdAt DESC
-        """,
+        "SELECT * FROM entry WHERE deletedAt IS NULL AND " + NOT_BLANK +
+            " AND locked = 0 " +
+            "AND (title LIKE '%' || :keyword || '%' OR body LIKE '%' || :keyword || '%') " +
+            "ORDER BY entryDate DESC, createdAt DESC",
     )
     fun search(keyword: String): Flow<List<EntryWithTags>>
 
@@ -66,24 +65,15 @@ interface EntryDao {
 
     @Transaction
     @Query(
-        """
-        SELECT * FROM entry
-        WHERE deletedAt IS NULL
-          AND entryDate = :epochDay
-          AND (length(trim(title)) > 0 OR length(trim(body)) > 0)
-        ORDER BY createdAt ASC
-        """,
+        "SELECT * FROM entry WHERE deletedAt IS NULL AND entryDate = :epochDay " +
+            "AND " + NOT_BLANK + " ORDER BY createdAt ASC",
     )
     fun observeDay(epochDay: Long): Flow<List<EntryWithTags>>
 
     /** 日历要的两样东西一次拿全：哪天有记录、以及那天的"最后一个心情"。 */
     @Query(
-        """
-        SELECT entryDate, mood, updatedAt FROM entry
-        WHERE deletedAt IS NULL
-          AND entryDate BETWEEN :fromDay AND :toDay
-          AND (length(trim(title)) > 0 OR length(trim(body)) > 0)
-        """,
+        "SELECT entryDate, mood, updatedAt FROM entry WHERE deletedAt IS NULL " +
+            "AND entryDate BETWEEN :fromDay AND :toDay AND " + NOT_BLANK,
     )
     fun observeDayMoods(fromDay: Long, toDay: Long): Flow<List<DayMoodRow>>
 
@@ -147,11 +137,8 @@ interface EntryDao {
     suspend fun allBackgrounds(): List<String?>
 
     @Query(
-        """
-        SELECT count(*) FROM entry
-        WHERE deletedAt IS NULL AND entryDate = :epochDay
-          AND (length(trim(title)) > 0 OR length(trim(body)) > 0)
-        """,
+        "SELECT count(*) FROM entry WHERE deletedAt IS NULL AND entryDate = :epochDay " +
+            "AND " + NOT_BLANK,
     )
     suspend fun countOnDay(epochDay: Long): Int
 

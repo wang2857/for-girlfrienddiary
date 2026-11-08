@@ -15,8 +15,10 @@ android {
         applicationId = "com.synn.diary"
         minSdk = 26
         targetSdk = 36
-        versionCode = 74
-        versionName = "1.0.2"
+        versionCode = 75
+        versionName = "1.0.3"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
             // 只打 64 位包：vivo 等国内商店早已只收 64 位，32 位 so 留着只是白白增大体积
@@ -64,6 +66,8 @@ android {
     testOptions {
         // android.util.Log 这类桩在 JVM 测试里直接返回默认值，别让它们把测试打断
         unitTests.isReturnDefaultValues = true
+        // Robolectric 需要 resources
+        unitTests.isIncludeAndroidResources = true
     }
 
     lint {
@@ -76,6 +80,15 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+}
+
+// Robolectric 运行时会把 android-all 下到本地 Maven 仓库；
+// 沙盒里默认的 ~/.m2 不可写，指向工程内的目录。
+tasks.withType<Test>().configureEach {
+    val home = layout.buildDirectory.dir("test-home").get().asFile.apply { mkdirs() }
+    // 沙盒里 ~ 不可写：Robolectric 要在 user.home 下建下载锁、下载 android-all
+    systemProperty("user.home", home.absolutePath)
+    systemProperty("maven.repo.local", layout.buildDirectory.dir("robolectric-m2").get().asFile.absolutePath)
 }
 
 ksp {
@@ -121,6 +134,13 @@ dependencies {
     implementation(libs.sqlcipher.android)
 
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.room.testing)
+
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.runner)
 }
 
 /**

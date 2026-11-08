@@ -2,7 +2,7 @@
 
 安卓本地日记 App。只为自己用：不上架、不联网、数据全在手机上。
 
-**当前版本 1.0.2（仅调试版）** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
+**当前版本 1.0.3（仅调试版）** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
 ｜ 数据库 v9 ｜ 变更历史见 [CHANGELOG.md](CHANGELOG.md) ｜ 存档信息见 [ARCHIVE.md](ARCHIVE.md)
 
 ---
@@ -212,8 +212,12 @@ app/src/main/java/com/synn/diary/
 ./build.sh :app:check64Bit          # 构建 + 64 位自检
 ```
 
-- 单测 8 个文件 / 33 个用例，覆盖：正文图片标记、搜索策略（含 emoji 码点）、恢复码规范化、
-  备份口令封装（PBKDF2+AES-GCM 往返/错码/篡改）、明文库文件头、FTS 查询转义、纸张 id 映射、日期格式化
+- **JVM 单测 10 个文件 / 37 个用例**：正文图片标记、搜索策略（含 emoji 码点）、恢复码规范化、
+  备份口令封装、明文库文件头、FTS 查询转义、纸张 id 映射、日期格式化；
+  另有 Robolectric 用例：`8→9` 真迁移（拿导出的 8.json 建库再跑迁移）、时间线过滤（空壳/回收站/收藏）
+- **Android 仪器测试 3 个用例**（`androidTest`，跑在真机/arm64 模拟器上）：
+  FTS5 触发器（插入/更新/删除同步、多命中排序）＋ 备份往返（导出→彻底删除→合并→图片/字体都回来）
+- Robolectric 的 SQLite 不带 FTS5，所以索引相关的只能用仪器测试；反过来仪器测试要设备，CI 上只编译不跑
 - `.github/workflows/ci.yml`（推到 GitHub 后生效）：JDK 21 + SDK 36，依次跑单测 → lint → 构建 + 64 位自检，
   失败时上传测试与 lint 报告
 - 目前**只测纯逻辑**：数据库/DAO、UI、备份导入这类要 Android 环境的还没有集成测试

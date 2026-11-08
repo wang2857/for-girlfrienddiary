@@ -40,6 +40,9 @@ jobs:
       - name: Lint（有 Error 就让构建失败）
         run: ./gradlew --no-daemon :app:lintDebug
 
+      - name: 编译仪器测试（arm64 应用跑不了 x86_64 模拟器，这里只编译）
+        run: ./gradlew --no-daemon :app:assembleDebugAndroidTest
+
       - name: 构建调试包 + 64 位自检
         run: ./gradlew --no-daemon :app:check64Bit
 
