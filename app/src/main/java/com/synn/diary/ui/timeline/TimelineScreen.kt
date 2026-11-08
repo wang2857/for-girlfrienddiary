@@ -201,9 +201,9 @@ fun TimelineScreen(
                                             close()
                                             if (entry.locked) {
                                                 pendingUnlockRemoval = row.item
-                                            } else if (!lockManager.hasPin()) {
+                                            } else if (!lockManager.canLockEntries()) {
                                                 scope.launch {
-                                                    snackbarHostState.showSnackbar("请先在「设置」里开启应用锁并设置密码")
+                                                    snackbarHostState.showSnackbar("先在「设置」里开启应用锁（设 4 位密码），才能给日记上锁")
                                                 }
                                             } else {
                                                 viewModel.setLocked(entry.id, true)

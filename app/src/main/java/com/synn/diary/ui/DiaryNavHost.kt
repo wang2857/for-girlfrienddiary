@@ -65,7 +65,15 @@ fun DiaryNavHost(container: AppContainer) {
     val openEntry: (Long) -> Unit = { id ->
         scope.launch {
             val entry = container.entryRepository.find(id)
-            if (entry?.locked == true) pendingUnlock = id else navController.navigate("editor/$id")
+            if (entry?.locked == true && container.lockManager.canLockEntries()) {
+                pendingUnlock = id
+            } else {
+                // 锁着但没有可用凭证（老数据 / 刚关掉应用锁）：直接放开，避免日记永远打不开
+                if (entry?.locked == true) {
+                    container.entryRepository.setLocked(id, false)
+                }
+                navController.navigate("editor/$id")
+            }
         }
     }
     val createEntry: () -> Unit = {

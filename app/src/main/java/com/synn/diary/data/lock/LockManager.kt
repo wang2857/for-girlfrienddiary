@@ -54,11 +54,16 @@ class LockManager(val store: LockStore) {
     }
 
     fun disableLock() {
-        store.enabled = false
-        store.biometricEnabled = false
+        // 关闭应用锁 = 应用里不再有密码/指纹这回事，
+        // 所以哈希也要清掉。否则会出现"没设密码却能上锁、解锁又要密码"的死循环。
+        store.clear()
         _enabled.value = false
         _locked.value = false
+        _allowScreenshots.value = false
     }
+
+    /** 能不能给单篇日记上锁：必须真的有一个可验证的凭证。 */
+    fun canLockEntries(): Boolean = _enabled.value && store.hasPin()
 
     /** 离开 app 时调用。 */
     fun lockIfEnabled() {
