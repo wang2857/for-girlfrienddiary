@@ -104,6 +104,7 @@ class BackupManager(
                     .put("entryCount", info.entryCount)
                     .put("imageCount", info.imageCount)
                     .put("backgroundCount", info.backgroundCount)
+                    .put("encrypted", true)
                     .toString()
                     .toByteArray(),
             )
@@ -136,6 +137,9 @@ class BackupManager(
             require(File(staging, MANIFEST).exists()) { "不是有效的备份包（缺少清单）" }
             require(db.exists()) { "不是有效的备份包（缺少数据库）" }
             require(db.length() > 0) { "备份包里的数据库是空的" }
+            require(!DbEncryption.isPlaintext(db)) {
+                "这是旧版本导出的明文备份，当前版本只接受加密备份"
+            }
 
             val json = JSONObject(File(staging, MANIFEST).readText())
             val schemaVersion = json.optInt("schemaVersion", 0)
@@ -178,6 +182,9 @@ class BackupManager(
             val staging = unzipToStaging(uri)
             val db = File(staging, DB_NAME)
             require(db.exists() && db.length() > 0) { "不是有效的备份包（缺少数据库）" }
+            require(!DbEncryption.isPlaintext(db)) {
+                "这是旧版本导出的明文备份，当前版本只接受加密备份"
+            }
 
             // 备份包里的库可能是加密的（同一台设备导出的），也可能是老版本的明文
             val source = openSource(db)
@@ -305,30 +312,21 @@ class BackupManager(
         )
     }
 
-    /** 备份里的库可能就是加密库；按文件头判断用哪套打开方式。 */
+    /** 备份里的库一律是加密库（0.33.0 起）；明文备份直接拒绝。 */
     private fun openSource(db: File): Source {
-        return if (DbEncryption.isPlaintext(db)) {
-            val plain = android.database.sqlite.SQLiteDatabase.openDatabase(
-                db.path,
-                null,
-                android.database.sqlite.SQLiteDatabase.OPEN_READONLY,
-            )
-            object : Source {
-                override fun query(sql: String): Cursor = plain.rawQuery(sql, null)
-                override fun close() = plain.close()
-            }
-        } else {
-            val encrypted = net.zetetic.database.sqlcipher.SQLiteDatabase.openDatabase(
-                db.path,
-                dbPassphrase,
-                null,
-                net.zetetic.database.sqlcipher.SQLiteDatabase.OPEN_READONLY,
-                null,
-            )
-            object : Source {
-                override fun query(sql: String): Cursor = encrypted.rawQuery(sql, null)
-                override fun close() = encrypted.close()
-            }
+        require(!DbEncryption.isPlaintext(db)) {
+            "这是旧版本导出的明文备份，当前版本只接受加密备份"
+        }
+        val encrypted = net.zetetic.database.sqlcipher.SQLiteDatabase.openDatabase(
+            db.path,
+            dbPassphrase,
+            null,
+            net.zetetic.database.sqlcipher.SQLiteDatabase.OPEN_READONLY,
+            null,
+        )
+        return object : Source {
+            override fun query(sql: String): Cursor = encrypted.rawQuery(sql, null)
+            override fun close() = encrypted.close()
         }
     }
 

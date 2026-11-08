@@ -189,8 +189,10 @@ FROM entry WHERE deletedAt IS NOT NULL ORDER BY deletedAt ASC LIMIT 10;
 
 - 口令：随机 32 字节 → hex → 用 Keystore AES-GCM 封装后存 `db_security.xml`；
   **不跟 4 位 PIN 绑定**（PIN 只有 1 万种，派生密钥等于没加密）
-- 从明文库升级：首次启动时读明文 schema → 建同结构加密库 → 逐表搬行 → 建索引 →
-  校验条数 → 删旧 `-wal/-shm` → 原子替换；任一步失败都保留原库
+- **不再兼容明文库**：启动时如果发现 `databases/diary.db` 是明文（文件头是 `SQLite format 3`），
+  直接删掉（连 `-wal/-shm`），让 Room 重新建一个加密库。0.33.0 之前的明文数据按产品决定放弃
+- 备份只接受加密库：导入/合并时如果备份里的 `diary.db` 是明文，直接报
+  "这是旧版本导出的明文备份，当前版本只接受加密备份"，不会替换任何数据
 - 备份包里的库就是加密库本身：**换机 / 重装后口令丢失，备份也打不开**
 - 搜索是 `LIKE '%关键词%'`，数据量大再换 FTS5
 

@@ -34,12 +34,8 @@ class AppContainer(context: Context) {
     private val database: AppDatabase = run {
         // SQLCipher 的 native 库得自己加载，AAR 不会替你做
         System.loadLibrary("sqlcipher")
-        // 老版本留下的是明文库，第一次启动时在这里原地转成加密库
-        DbEncryption.migrateIfPlaintext(
-            appContext.getDatabasePath("diary.db"),
-            dbPassphrase,
-            appContext.cacheDir,
-        )
+        // 不再兼容明文库：发现就删掉，让 Room 重新建一个加密的
+        DbEncryption.discardPlaintext(appContext.getDatabasePath("diary.db"))
         Room.databaseBuilder(
             appContext,
             AppDatabase::class.java,
