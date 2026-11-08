@@ -16,6 +16,7 @@ import com.synn.diary.data.backup.AutoBackupScheduler
 import com.synn.diary.notify.DailyReminder
 import com.synn.diary.notify.ReminderScheduler
 import com.synn.diary.ui.lock.RecoveryCodeDialog
+import com.synn.diary.ui.lock.VerifyPinDialog
 import com.synn.diary.util.CrashLog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
@@ -95,7 +96,12 @@ fun SettingsScreen(
 
     var showSetPin by remember { mutableStateOf(false) }
     var showResetRecovery by remember { mutableStateOf(false) }
+    var showRevealPin by remember { mutableStateOf(false) }
     var pendingRecoveryCode by remember { mutableStateOf<String?>(null) }
+    var recoveryAgain by remember { mutableStateOf(false) }
+    // 生成/重设之后要把这一行刷成「查看」，而 lockManager 不是可观察状态
+    var hasRecovery by remember { mutableStateOf(lockManager.hasRecoveryCode()) }
+    var canRevealRecovery by remember { mutableStateOf(lockManager.canRevealRecoveryCode()) }
     var showCrashLog by remember { mutableStateOf(false) }
     // 每次进设置页重新扫一遍：闪退之后重开应用，这里才拿得到上一次的记录
     var crashFiles by remember { mutableStateOf(CrashLog.files(context)) }
@@ -186,17 +192,26 @@ fun SettingsScreen(
                 )
                 SettingActionRow(
                     title = "恢复码",
-                    subtitle = if (lockManager.hasRecoveryCode()) {
-                        "忘了密码时用它重置，记得放在哪"
-                    } else {
-                        "还没生成，强烈建议现在设一个"
+                    subtitle = when {
+                        !hasRecovery -> "还没生成，强烈建议现在设一个"
+                        canRevealRecovery -> "忘了密码时用它重置，忘了抄可以再查看"
+                        else -> "旧版本生成的，明文已经看不到了，可以重设"
                     },
-                    actionLabel = if (lockManager.hasRecoveryCode()) "重设" else "生成",
+                    actionLabel = when {
+                        !hasRecovery -> "生成"
+                        canRevealRecovery -> "查看"
+                        else -> "重设"
+                    },
                     onClick = {
-                        if (lockManager.hasRecoveryCode()) {
-                            showResetRecovery = true
-                        } else {
-                            pendingRecoveryCode = lockManager.resetRecoveryCode()
+                        when {
+                            !hasRecovery -> {
+                                recoveryAgain = false
+                                pendingRecoveryCode = lockManager.resetRecoveryCode()
+                                hasRecovery = true
+                                canRevealRecovery = lockManager.canRevealRecoveryCode()
+                            }
+                            canRevealRecovery -> showRevealPin = true
+                            else -> showResetRecovery = true
                         }
                     },
                 )
@@ -369,7 +384,12 @@ fun SettingsScreen(
                 lockManager.setPin(pin, lockNow = false)
                 showSetPin = false
                 // 引导里选了「以后再说」的人：第一次设密码时补发恢复码
-                lockManager.ensureRecoveryCode()?.let { pendingRecoveryCode = it }
+                lockManager.ensureRecoveryCode()?.let { code ->
+                    recoveryAgain = false
+                    pendingRecoveryCode = code
+                    hasRecovery = true
+                    canRevealRecovery = lockManager.canRevealRecoveryCode()
+                }
             },
         )
     }
@@ -401,7 +421,10 @@ fun SettingsScreen(
                 TextButton(
                     onClick = {
                         showResetRecovery = false
+                        recoveryAgain = false
                         pendingRecoveryCode = lockManager.resetRecoveryCode()
+                        hasRecovery = true
+                        canRevealRecovery = lockManager.canRevealRecoveryCode()
                     },
                 ) { Text("重设") }
             },
@@ -411,8 +434,36 @@ fun SettingsScreen(
         )
     }
 
+    if (showRevealPin) {
+        VerifyPinDialog(
+            description = "看恢复码之前，先确认是你本人。",
+            verifyPin = lockManager::verifyPin,
+            onVerified = {
+                showRevealPin = false
+                val code = lockManager.revealRecoveryCode()
+                if (code == null) {
+                    Toast.makeText(context, "这条恢复码读不出来了，重设一个吧", Toast.LENGTH_LONG).show()
+                } else {
+                    recoveryAgain = true
+                    pendingRecoveryCode = code
+                }
+            },
+            onDismiss = { showRevealPin = false },
+        )
+    }
+
     pendingRecoveryCode?.let { code ->
-        RecoveryCodeDialog(code = code, onDismiss = { pendingRecoveryCode = null })
+        RecoveryCodeDialog(
+            code = code,
+            again = recoveryAgain,
+            onDismiss = { pendingRecoveryCode = null },
+            onReset = {
+                recoveryAgain = false
+                pendingRecoveryCode = lockManager.resetRecoveryCode()
+                hasRecovery = true
+                canRevealRecovery = lockManager.canRevealRecoveryCode()
+            },
+        )
     }
 
     if (showCrashLog) {

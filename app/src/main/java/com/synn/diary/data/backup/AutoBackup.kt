@@ -52,6 +52,9 @@ object AutoBackup {
 
     suspend fun run(context: Context, container: AppContainer): Result<BackupInfo> =
         withContext(Dispatchers.IO) {
+            // 上次如果在打包中途被取消（用户切走了设置页），会留下一个 .part
+            dir(context).listFiles()?.filter { it.name.endsWith(".part") }?.forEach { it.delete() }
+
             val result = runCatching {
                 container.backupManager.exportToFile(File(dir(context), "diary-${stamp()}.zip"))
             }

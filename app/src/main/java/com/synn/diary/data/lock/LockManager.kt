@@ -49,17 +49,25 @@ class LockManager(val store: LockStore) {
      */
     fun ensureRecoveryCode(): String? {
         if (store.hasRecoveryCode()) return null
-        val code = RecoveryCode.generate()
-        store.setRecoveryCode(code)
-        return code
+        return createRecoveryCode()
     }
 
     /** 设置里「重设恢复码」：旧的那张纸立刻作废。 */
-    fun resetRecoveryCode(): String {
+    fun resetRecoveryCode(): String = createRecoveryCode()
+
+    /** 生成 + 存哈希 + 存一份可再显示的密文；明文只由调用方拿去显示一次。 */
+    private fun createRecoveryCode(): String {
         val code = RecoveryCode.generate()
         store.setRecoveryCode(code)
+        // 封不起来（Keystore 抽风）也不影响用，只是以后看不到了
+        store.sealRecoveryCode(code)
         return code
     }
+
+    fun canRevealRecoveryCode(): Boolean = store.canRevealRecoveryCode()
+
+    /** 只有 UI 先验过 4 位密码，才允许调这个。 */
+    fun revealRecoveryCode(): String? = store.revealRecoveryCode()
 
     fun verifyRecoveryCode(code: String): Boolean =
         store.hasRecoveryCode() && store.verifyRecoveryCode(code)

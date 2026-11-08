@@ -70,8 +70,28 @@ class LockStore(context: Context) {
         return MessageDigest.isEqual(hash(RecoveryCode.normalize(code), salt), expected)
     }
 
+    // ---- 恢复码的"抄丢了也能再看" ----
+    // 哈希只能验、不能还原，所以另存一份用 Keystore 密钥封起来的明文。
+    // 查看时 UI 会先要求输 4 位密码，捡到手机的人看不到。
+
+    /** 老版本只存过哈希，没有密文——那种情况没法再显示，只能重设。 */
+    fun canRevealRecoveryCode(): Boolean = prefs.contains(KEY_RECOVERY_SEALED)
+
+    fun sealRecoveryCode(code: String): Boolean = runCatching {
+        prefs.edit()
+            .putString(KEY_RECOVERY_SEALED, RecoverySealer.seal(RecoveryCode.normalize(code)))
+            .apply()
+        true
+    }.getOrDefault(false)
+
+    fun revealRecoveryCode(): String? = runCatching {
+        prefs.getString(KEY_RECOVERY_SEALED, null)?.let(RecoverySealer::unseal)
+    }.getOrNull()
+
     fun clear() {
         prefs.edit().clear().apply()
+        // 密钥跟着一起删：留着密文也没用了，还省得以后有人拿它做文章
+        RecoverySealer.forget()
     }
 
     private fun hash(pin: String, salt: ByteArray): ByteArray {
@@ -93,6 +113,7 @@ class LockStore(context: Context) {
         const val KEY_HASH = "hash"
         const val KEY_RECOVERY_SALT = "recovery_salt"
         const val KEY_RECOVERY_HASH = "recovery_hash"
+        const val KEY_RECOVERY_SEALED = "recovery_sealed"
         const val SALT_BYTES = 16
         const val ITERATIONS = 120_000
         const val KEY_BITS = 256

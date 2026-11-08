@@ -21,18 +21,29 @@ import androidx.compose.ui.unit.sp
 import com.synn.diary.data.lock.RecoveryCode
 
 /**
- * 恢复码只在生成这一刻可见，所以这个框必须把话说清楚：
- * 抄到哪里、丢了会怎样、能不能截图。
+ * 显示恢复码。
+ *
+ * [again] 为 false 时是"刚生成、只此一次"；为 true 是"验过密码后再看一遍"，
+ * 文案得改，否则用户会以为看第二次就把码弄没了。
  */
 @Composable
-fun RecoveryCodeDialog(code: String, onDismiss: () -> Unit) {
+fun RecoveryCodeDialog(
+    code: String,
+    onDismiss: () -> Unit,
+    again: Boolean = false,
+    onReset: (() -> Unit)? = null,
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("抄下这串恢复码") },
+        title = { Text(if (again) "你的恢复码" else "抄下这串恢复码") },
         text = {
             Column {
                 Text(
-                    text = "忘记密码时，只有它能把日记救回来。只显示这一次。",
+                    text = if (again) {
+                        "忘了密码时用它重置。关掉窗口它仍然有效，直到你重设为止。"
+                    } else {
+                        "忘记密码时，只有它能把日记救回来。只显示这一次。"
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -58,7 +69,12 @@ fun RecoveryCodeDialog(code: String, onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("我已抄好") }
+            TextButton(onClick = onDismiss) { Text(if (again) "关闭" else "我已抄好") }
+        },
+        dismissButton = {
+            if (onReset != null) {
+                TextButton(onClick = onReset) { Text("重设一个") }
+            }
         },
     )
 }
