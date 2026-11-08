@@ -1,3 +1,4 @@
+import java.util.Properties
 import java.util.zip.ZipFile
 
 plugins {
@@ -5,6 +6,12 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+}
+
+// 正式签名信息放在 keystore/release.properties（不进公共备份，但要跟 keystore 一起保管）
+val releaseSigning = Properties().apply {
+    val file = rootProject.file("keystore/release.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
 }
 
 android {
@@ -35,6 +42,18 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+
+        // 正式包用自己的 RSA 4096 key；丢了就升不了级，所以 keystore 跟着仓库一起保管
+        if (releaseSigning.getProperty("storePassword") != null) {
+            create("release") {
+                storeFile = rootProject.file(
+                    "keystore/" + releaseSigning.getProperty("storeFile", "release.keystore"),
+                )
+                storePassword = releaseSigning.getProperty("storePassword")
+                keyAlias = releaseSigning.getProperty("keyAlias")
+                keyPassword = releaseSigning.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
@@ -44,8 +63,8 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
         release {
-            // 自己用，不上架：沿用同一个调试签名，方便和已装的版本共存/覆盖
-            signingConfig = signingConfigs.getByName("debug")
+            // 正式签名（keystore/release.keystore），和调试包是两个不同的应用，可共存
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

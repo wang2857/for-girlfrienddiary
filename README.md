@@ -2,7 +2,7 @@
 
 安卓本地日记 App。只为自己用：不上架、不联网、数据全在手机上。
 
-**当前版本 1.0.4（仅调试版）** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
+**当前版本 1.0.4（调试包 + 正式签名包）** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
 ｜ 数据库 v9 ｜ 变更历史见 [CHANGELOG.md](CHANGELOG.md) ｜ 存档信息见 [ARCHIVE.md](ARCHIVE.md)
 
 ---
@@ -157,20 +157,25 @@ cd diary
 ./build.sh assembleRelease
 ```
 
-> **约定：日常只构建并安装调试包**（`com.synn.diary.debug`）。
-> 正式包按需构建，避免每次改动都出两份产物、桌面装两个应用。
+> **日常开发仍用调试包**（`com.synn.diary.debug`）；正式包（`com.synn.diary`）只在存档/交付时构建，
+> 它和调试包是两个不同的应用，可以同时装、数据互不相通。
 
-| | debug（日常） | release（按需） |
+| | debug（日常） | release（正式） |
 |---|---|---|
 | 包名 | `com.synn.diary.debug` | `com.synn.diary` |
-| 体积 | 约 21 MB（含 SQLCipher） | 约 9 MB（无 SQLCipher 时的旧数据） |
-| 保留产物 | 是，`dist/` | 否，构建后按需处理 |
+| 签名 | `keystore/debug.keystore` | `keystore/release.keystore`（RSA 4096） |
+| 体积 | 约 21 MB | 约 17 MB |
+| 数据 | 独立 | 独立 |
 
-- release 沿用 `keystore/debug.keystore`（不上架，没另建正式签名）
+- 正式签名材料在 `keystore/release.keystore` + `keystore/release.properties`（密码在里面）。
+  **这两个文件丢了，已装的正式版就再也升不了级**，务必单独备份
+- 两个包的数据不互通：要把调试版的数据搬到正式版，先在调试版设恢复码 → 导出备份 →
+  在正式版用恢复码导入（普通"设备备份"不行，Keystore 不同解不开）
 - **关掉 R8**（`isMinifyEnabled = false`）：Room / Coil 的反射在混淆下有踩坑风险，个人用不值得冒险
 
 ```bash
-adb install -r dist/日记-0.24.4-debug.apk   # 升级请用 -r，数据库迁移会保住数据
+adb install -r dist/日记-1.0.4-debug.apk     # 调试版升级
+adb install -r dist/日记-1.0.4-release.apk   # 正式版升级（同一个 key 才能 -r）
 ```
 
 `allowBackup=false` + `dataExtractionRules` 全排除，所以**卸载重装会清空**。

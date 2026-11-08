@@ -534,3 +534,13 @@ APK 从 13 MB 涨到约 17 MB（字体占 3.4 MB）。
   跑完清理测试数据；`AppContainer` 增加 `close()`（关库 + 停后台作用域 + 反注册内存压力广播），
   避免多个 container 同时开着同一个库
 - 仪器测试从 3 个用例涨到 4 个
+
+## 1.0.4 正式版（首个正式签名构建）
+
+- 新建正式签名 `keystore/release.keystore`：RSA 4096、有效期 10000 天，
+  证书 SHA-256 `93:D2:B5:2B:A9:D5:DA:D9:47:C9:08:37:B3:D4:7D:D7:B2:DE:F9:7C:C4:28:26:14:02:E6:09:F0:36:F0:99:9C`
+- `signingConfigs.release` 从 `keystore/release.properties` 读密码；缺文件时退回 debug 签名（仅用于本地构建，不用于发布）
+- 正式包 `com.synn.diary` v1.0.4（versionCode 76），体积 17 MB，包内含 SQLCipher
+- 调试包与正式包数据独立；迁移数据要走"恢复码 + 导出备份"
+
+> ⚠️ `keystore/release.keystore` 和 `keystore/release.properties` 是升级的唯一凭据，丢了就只能卸载重装（数据全丢）。
