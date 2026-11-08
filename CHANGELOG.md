@@ -159,3 +159,8 @@
   加 `externalUiInProgress` 守卫：系统界面期间不上锁
 - 待导入的文件原本存在 Compose 局部状态里，进程被系统回收后丢失。
   挪到 `AppContainer`（应用级）
+
+## 构建约定（0.25.0 之后）
+
+- **日常只构建调试包**（`assembleDebug` → `com.synn.diary.debug`），装到这个包上验证
+- **正式包（`assembleRelease` → `com.synn.diary`）只在明确需要时构建**，不随每次改动一起出

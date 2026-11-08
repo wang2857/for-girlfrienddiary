@@ -84,11 +84,16 @@
 
 ```bash
 cd diary
-./build.sh assembleDebug          # app/build/outputs/apk/debug/app-debug.apk
-./build.sh assembleRelease        # app/build/outputs/apk/release/app-release.apk
+./build.sh assembleDebug          # app/build/outputs/apk/debug/app-debug.apk  ← 日常只出这个
 ./build.sh check64Bit             # 64 位合规自检：混进 32 位 so 就构建失败
 ./build.sh --stop                 # 改过环境变量后先停 daemon
+
+# 正式包（com.synn.diary）只在明确需要时才构建，默认不构建：
+./build.sh assembleRelease
 ```
+
+> **约定：日常只构建并安装调试包**（`com.synn.diary.debug`）。
+> 正式包按需构建，避免每次改动都出两份产物、桌面装两个应用。
 
 | | release | debug |
 |---|---|---|
