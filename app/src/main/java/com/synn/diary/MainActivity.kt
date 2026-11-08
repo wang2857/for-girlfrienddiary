@@ -9,6 +9,10 @@ import androidx.compose.foundation.layout.captionBarPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import com.synn.diary.ui.onboarding.OnboardingScreen
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -31,6 +35,8 @@ class MainActivity : FragmentActivity() {
                 val locked by container.lockManager.locked.collectAsStateWithLifecycle()
                 val lockEnabled by container.lockManager.enabled.collectAsStateWithLifecycle()
                 val allowScreenshots by container.lockManager.allowScreenshots.collectAsStateWithLifecycle()
+                // 首次安装先走引导（设密码），走完才进主界面
+                var onboarded by remember { mutableStateOf(com.synn.diary.data.Onboarding.isDone(this@MainActivity)) }
 
                 // 开关一改立刻生效，不用等下次回到前台
                 LaunchedEffect(lockEnabled, allowScreenshots) {
@@ -46,7 +52,12 @@ class MainActivity : FragmentActivity() {
                         .fillMaxSize()
                         .captionBarPadding(),
                 ) {
-                    if (lockEnabled && locked) {
+                    if (!onboarded) {
+                    OnboardingScreen(
+                        lockManager = container.lockManager,
+                        onFinish = { onboarded = true },
+                    )
+                } else if (lockEnabled && locked) {
                         LockScreen(
                             biometricEnabled = container.lockManager.biometricEnabled,
                             verifyPin = container.lockManager::verifyPin,
