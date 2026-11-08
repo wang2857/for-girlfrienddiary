@@ -20,7 +20,13 @@ object DbEncryption {
         file.inputStream().use { input ->
             if (input.read(header) < 16) return false
         }
-        return String(header, Charsets.US_ASCII).startsWith(PLAINTEXT_MAGIC)
+        return isPlaintextHeader(header)
+    }
+
+    /** 纯函数，方便单测：明文 SQLite 的文件头是 `SQLite format 3\0`。 */
+    fun isPlaintextHeader(header: ByteArray): Boolean {
+        if (header.size < PLAINTEXT_MAGIC.length) return false
+        return String(header, 0, PLAINTEXT_MAGIC.length, Charsets.US_ASCII) == PLAINTEXT_MAGIC
     }
 
     /**

@@ -15,8 +15,8 @@ android {
         applicationId = "com.synn.diary"
         minSdk = 26
         targetSdk = 36
-        versionCode = 73
-        versionName = "1.0.1"
+        versionCode = 74
+        versionName = "1.0.2"
 
         ndk {
             // 只打 64 位包：vivo 等国内商店早已只收 64 位，32 位 so 留着只是白白增大体积
@@ -59,6 +59,11 @@ android {
 
     buildFeatures {
         compose = true
+    }
+
+    testOptions {
+        // android.util.Log 这类桩在 JVM 测试里直接返回默认值，别让它们把测试打断
+        unitTests.isReturnDefaultValues = true
     }
 
     lint {
@@ -114,6 +119,8 @@ dependencies {
 
     // 数据库加密：SQLCipher 的 Android 封装，Room 通过 openHelperFactory 接入
     implementation(libs.sqlcipher.android)
+
+    testImplementation(libs.junit)
 }
 
 /**

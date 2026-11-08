@@ -473,3 +473,31 @@ APK 从 13 MB 涨到约 17 MB（字体占 3.4 MB）。
 - 文档对齐：README / ARCHIVE / CHANGELOG / `docs/database.md` 都是 1.0.1 + 数据库 v9
 - schema 导出的真实路径是 `app/schemas/com.synn.diary.data.db.AppDatabase/9.json`（Room 多套了一层目录），
   README 和 database.md 原来写成 `app/schemas/9.json`，已改
+
+## 1.0.2 — 单测与 CI
+
+**单元测试（33 个用例，8 个文件）**
+
+- `BodyMarkersTest`：标记生成/解析往返、老格式兼容、宽度夹取、非法文件名、多图顺序
+- `SearchPolicyTest`：3 字符门槛、中文、**emoji 按码点算**（两个 emoji 不能进 FTS）
+- `RecoveryCodeTest`：生成字母表、四组格式化、规范化（空格/横杠/大小写）
+- `BackupKeyTest`：PBKDF2+AES-GCM 往返、错恢复码、密文篡改、盐随机
+- `DbEncryptionHeaderTest`：明文 SQLite 文件头识别
+- `FtsQueryTest`：关键词包短语、引号转义、OR 不被当操作符
+- `EntryBackgroundTest`：纸张 id 映射、`img:` 前缀、未知 id 兜底
+- `DatesTest`：24 小时格式、零点、epochDay 互转、周一为一周起点
+
+为了能测，抽了两个纯函数：
+
+- `SearchPolicy.usesFullText(query, ftsAvailable)`（原来埋在 `EntryRepository.search` 里）
+- `DbEncryption.isPlaintextHeader(bytes)`（原来直接读文件）
+
+**CI**
+
+- `.github/workflows/ci.yml`：JDK 21 + SDK 36，依次跑单测 → lint → `check64Bit`，
+  失败也上传测试/lint 报告；push 到 `main`/`beautify` 或 PR 时触发
+- 注意：仓库目前没有远端，推上去才会真正执行
+
+**其它**
+
+- `unitTests.isReturnDefaultValues = true`，android.util.Log 之类的桩不会让 JVM 测试炸

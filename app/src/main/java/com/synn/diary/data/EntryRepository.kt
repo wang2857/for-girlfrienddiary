@@ -121,9 +121,7 @@ class EntryRepository(
      */
     fun search(keyword: String): Flow<List<EntryWithTags>> {
         val clean = keyword.trim()
-        // 按码点算：一个 emoji 在 UTF-16 里占 2 个 length，用 length 会把 2 个 emoji 误判成 4 个字
-        val charCount = clean.codePointCount(0, clean.length)
-        if (charCount < 3 || !FullTextIndex.enabled) return entryDao.search(clean)
+        if (!SearchPolicy.usesFullText(clean, FullTextIndex.enabled)) return entryDao.search(clean)
         return entryDao.searchFts(
             SimpleSQLiteQuery(
                 """

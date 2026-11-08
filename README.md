@@ -2,7 +2,7 @@
 
 安卓本地日记 App。只为自己用：不上架、不联网、数据全在手机上。
 
-**当前版本 1.0.1（仅调试版）** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
+**当前版本 1.0.2（仅调试版）** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
 ｜ 数据库 v9 ｜ 变更历史见 [CHANGELOG.md](CHANGELOG.md) ｜ 存档信息见 [ARCHIVE.md](ARCHIVE.md)
 
 ---
@@ -204,6 +204,20 @@ app/src/main/java/com/synn/diary/
 └── util/                   日期与农历、ViewModel 工厂
 ```
 
+### 测试与 CI
+
+```bash
+./build.sh :app:testDebugUnitTest   # 纯逻辑单测（JVM，不用模拟器）
+./build.sh :app:lintDebug           # 静态检查，0 Error 才过
+./build.sh :app:check64Bit          # 构建 + 64 位自检
+```
+
+- 单测 8 个文件 / 33 个用例，覆盖：正文图片标记、搜索策略（含 emoji 码点）、恢复码规范化、
+  备份口令封装（PBKDF2+AES-GCM 往返/错码/篡改）、明文库文件头、FTS 查询转义、纸张 id 映射、日期格式化
+- `.github/workflows/ci.yml`（推到 GitHub 后生效）：JDK 21 + SDK 36，依次跑单测 → lint → 构建 + 64 位自检，
+  失败时上传测试与 lint 报告
+- 目前**只测纯逻辑**：数据库/DAO、UI、备份导入这类要 Android 环境的还没有集成测试
+
 ### 数据模型
 
 `entry` 表（v9）：`id / uuid / entryDate(epochDay) / createdAt / updatedAt / title / body / mood /
@@ -360,6 +374,7 @@ primaryCpuAbi=arm64-v8a   secondaryCpuAbi=null  ← 纯 64 位运行
 | 崩溃日志 | ✅ 假的崩溃文件能在设置里读出全文、复制、清空；列表随重启刷新 |
 | 高长宽比 1080×2400/2460/2520 | ✅ 无黑边无裁切 |
 | 小窗 700×1000 + 键盘 | ✅ 正文可编辑 |
+| 单元测试 | ✅ 33 个用例全绿（`testDebugUnitTest`） |
 | 64 位 | ✅ `primaryCpuAbi=arm64-v8a`，`secondaryCpuAbi=null` |
 | release 包 | ✅ 安装、启动、写一条、保存、列表可见 |
 
@@ -400,7 +415,8 @@ primaryCpuAbi=arm64-v8a   secondaryCpuAbi=null  ← 纯 64 位运行
 
 - 崩溃日志只覆盖 Java/Kotlin 未捕获异常：native crash、ANR、被系统杀进程都不留文件
   （真要补，下一步是 `ApplicationExitInfo`，能拿到系统的 ANR / 低内存记录）
-- 没有测试、没有 CI、没有 lint 配置
+- 单测只覆盖纯逻辑（33 个用例）；数据库触发器、FTS 同步、备份导入、UI 流程还是靠手测
+- CI 只配了工作流文件，仓库还没有远端，推上去才会真正跑
 - `docs/` 里的截图是逐个功能加的，风格不完全统一
 
 产品层面的规划见仓库外的 `ANDROID-DIARY-PLAN.md`（已复制一份到 `docs/plan.md`）。

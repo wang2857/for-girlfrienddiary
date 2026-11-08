@@ -34,8 +34,8 @@ object Dates {
     fun fullDate(epochDay: Long): String = date(epochDay).format(fullDateFormatter)
 
     // LocalTime.ofInstant 是 API 31 才有的；这里走通用的 atZone，minSdk 26 也能用
-    fun time(epochMillis: Long): String =
-        Instant.ofEpochMilli(epochMillis).atZone(zone).toLocalTime().format(timeFormatter)
+    fun time(epochMillis: Long, zoneId: ZoneId = zone): String =
+        Instant.ofEpochMilli(epochMillis).atZone(zoneId).toLocalTime().format(timeFormatter)
 
     fun weekdayShort(epochDay: Long): String = date(epochDay).format(weekdayShortFormatter)
 
