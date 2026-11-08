@@ -37,7 +37,7 @@ class EditorViewModel(
         val loaded: Boolean = false,
         val savedAt: Long = 0L,
         val deleted: Boolean = false,
-        val background: EntryBackground = EntryBackground.DEFAULT,
+        val background: EntryBackground = EntryBackground.default,
         val weatherText: String? = null,
         val locationText: String? = null,
         val capturing: Boolean = false,
@@ -134,6 +134,14 @@ class EditorViewModel(
         viewModelScope.launch {
             persist()
             onSaved()
+        }
+    }
+
+    /** 从相册选一张当纸张：先落盘，再切过去。 */
+    fun importBackground(uri: android.net.Uri) {
+        viewModelScope.launch {
+            val name = imageStore.importBackground(uri) ?: return@launch
+            setBackground(EntryBackground.Custom(name))
         }
     }
 

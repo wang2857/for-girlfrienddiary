@@ -107,6 +107,7 @@ fun DiaryNavHost(container: AppContainer) {
 
     CompositionLocalProvider(
         LocalImageFiles provides { name -> container.imageStore.file(name) },
+        LocalBackgroundFiles provides { name -> container.imageStore.backgroundFile(name) },
     ) {
         NavHost(navController = navController, startDestination = ROUTE_TIMELINE) {
         composable(ROUTE_TIMELINE) {

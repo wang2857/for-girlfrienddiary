@@ -45,7 +45,10 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.layout.BoxScope
+import com.synn.diary.ui.LocalBackgroundFiles
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -143,6 +146,12 @@ fun EditorScreen(
         pendingFocusId = null
     }
 
+    val backgroundPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia(),
+    ) { uri ->
+        if (uri != null) viewModel.importBackground(uri)
+    }
+
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
@@ -232,17 +241,15 @@ fun EditorScreen(
             )
         },
     ) { inner ->
-        val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-        val paperColor = state.background.color(isDark)
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    if (state.background == EntryBackground.DEFAULT) MaterialTheme.colorScheme.background
-                    else paperColor,
-                ),
+        // 纸张：预设走"底色 + 花纹"，自定义图片走"图 + 蒙版"
+        PaperBackdrop(
+            background = state.background,
+            modifier = Modifier.fillMaxSize(),
         ) {
-        val ruleColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.03f)
+        // 纸上有花纹时不画行线：两种纹理叠在一起太吵
+        val hasPattern = (state.background as? EntryBackground.Preset)
+            ?.pattern?.let { it != PaperPattern.NONE } ?: (state.background is EntryBackground.Custom)
+        val ruleColor = MaterialTheme.colorScheme.onSurface.copy(alpha = if (hasPattern) 0f else 0.03f)
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -510,6 +517,12 @@ fun EditorScreen(
                 viewModel.setBackground(it)
                 showBackgroundPicker = false
             },
+            onPickCustom = {
+                showBackgroundPicker = false
+                backgroundPicker.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                )
+            },
             onDismiss = { showBackgroundPicker = false },
         )
     }
@@ -745,60 +758,124 @@ private fun ToolbarItem(
 private fun BackgroundPicker(
     current: EntryBackground,
     onPick: (EntryBackground) -> Unit,
+    onPickCustom: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val previewPattern = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.22f)
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("纸张") },
         text = {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                EntryBackground.entries.forEach { style ->
-                    val selected = style == current
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { onPick(style) }
-                            .padding(4.dp),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(52.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    if (style == EntryBackground.DEFAULT) {
-                                        MaterialTheme.colorScheme.surface
-                                    } else {
-                                        style.color(isDark)
-                                    },
+            Column {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    EntryBackground.presets.forEach { style ->
+                        val selected = style.id == current.id
+                        PaperSwatch(
+                            label = style.label,
+                            selected = selected,
+                            onClick = { onPick(style) },
+                        ) {
+                            if (style.isDefault) {
+                                Box(
+                                    Modifier
+                                        .matchParentSize()
+                                        .background(MaterialTheme.colorScheme.surface),
                                 )
-                                .border(
-                                    width = if (selected) 2.dp else 1.dp,
-                                    color = if (selected) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                                    shape = CircleShape,
-                                ),
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = style.label,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (selected) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                            } else {
+                                Box(
+                                    Modifier
+                                        .matchParentSize()
+                                        .background(style.color(isDark))
+                                        .drawBehind {
+                                            // 预览块只有 54dp，把花纹缩小来看得到两三个图案
+                                            scale(0.55f, pivot = Offset.Zero) {
+                                                drawPaperPattern(style.pattern, previewPattern)
+                                            }
+                                        },
+                                )
+                            }
+                        }
+                    }
+
+                    // 自定义：从相册选一张，直接用成纸张
+                    val custom = current as? EntryBackground.Custom
+                    PaperSwatch(
+                        label = if (custom == null) "自定义" else "换一张",
+                        selected = custom != null,
+                        onClick = onPickCustom,
+                    ) {
+                        if (custom != null) {
+                            AsyncImage(
+                                model = LocalBackgroundFiles.current(custom.fileName),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.matchParentSize(),
+                            )
+                        } else {
+                            Box(
+                                Modifier
+                                    .matchParentSize()
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text("＋", style = MaterialTheme.typography.titleMedium)
+                            }
+                        }
                     }
                 }
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = "自定义会铺一层淡色蒙版，保证字能看清",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline,
+                )
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("完成") }
         },
     )
+}
+
+@Composable
+private fun PaperSwatch(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(2.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(54.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .border(
+                    width = if (selected) 2.dp else 1.dp,
+                    color = if (selected) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.outline.copy(alpha = 0.45f),
+                    shape = RoundedCornerShape(14.dp),
+                ),
+            content = content,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = if (selected) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 @Composable

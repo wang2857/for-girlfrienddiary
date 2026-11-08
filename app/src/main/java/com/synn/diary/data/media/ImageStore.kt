@@ -23,7 +23,52 @@ class ImageStore(context: Context) {
     private val context = context.applicationContext
     private val dir = File(this.context.filesDir, "images").apply { mkdirs() }
 
+    /**
+     * 自定义纸张背景单独一个目录。
+     * 不能和正文图片混在一起——孤儿图片清理会扫 images/ 并把没人引用的删掉。
+     */
+    private val backgroundDir = File(this.context.filesDir, "backgrounds").apply { mkdirs() }
+
     fun file(name: String): File = File(dir, name)
+
+    fun backgroundFile(name: String): File = File(backgroundDir, name)
+
+    /** 导入一张自定义纸张：复用正文图片的压缩与摆正逻辑，只换目标目录。 */
+    suspend fun importBackground(uri: Uri): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val resolver = context.contentResolver
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@runCatching null
+
+            val sample = calculateInSampleSize(bounds.outWidth, bounds.outHeight, MAX_EDGE)
+            val bitmap = resolver.openInputStream(uri)?.use { stream ->
+                BitmapFactory.decodeStream(
+                    stream,
+                    null,
+                    BitmapFactory.Options().apply { inSampleSize = sample },
+                )
+            } ?: return@runCatching null
+
+            val orientation = resolver.openInputStream(uri)?.use { stream ->
+                runCatching {
+                    ExifInterface(stream).getAttributeInt(
+                        ExifInterface.TAG_ORIENTATION,
+                        ExifInterface.ORIENTATION_NORMAL,
+                    )
+                }.getOrDefault(ExifInterface.ORIENTATION_NORMAL)
+            } ?: ExifInterface.ORIENTATION_NORMAL
+
+            val upright = rotate(bitmap, orientation)
+            val name = "bg_${UUID.randomUUID()}.jpg"
+            File(backgroundDir, name).outputStream().use { out ->
+                upright.compress(Bitmap.CompressFormat.JPEG, 88, out)
+            }
+            if (upright !== bitmap) bitmap.recycle()
+            upright.recycle()
+            name
+        }.getOrNull()
+    }
 
     suspend fun import(uri: Uri): String? = withContext(Dispatchers.IO) {
         runCatching {
