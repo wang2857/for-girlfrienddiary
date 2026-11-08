@@ -102,6 +102,7 @@ fun DiaryNavHost(container: AppContainer) {
         contract = ActivityResultContracts.RequestPermission(),
     ) { _ ->
         // 给不给权限都要能写日记
+        container.externalUiInProgress = false
         createEntry()
     }
 
@@ -127,6 +128,7 @@ fun DiaryNavHost(container: AppContainer) {
                     val askedBefore = prefs.getBoolean(KEY_LOCATION_ASKED, false)
                     if (!granted && !askedBefore) {
                         prefs.edit().putBoolean(KEY_LOCATION_ASKED, true).apply()
+                        container.externalUiInProgress = true
                         locationLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
                     } else {
                         createEntry()
@@ -232,6 +234,9 @@ fun DiaryNavHost(container: AppContainer) {
             EditorScreen(
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
+                // 选图/选背景是系统界面：这期间别上锁，否则回来图就丢了
+                onExternalUiStart = { container.externalUiInProgress = true },
+                onExternalUiEnd = { container.externalUiInProgress = false },
             )
         }
     }

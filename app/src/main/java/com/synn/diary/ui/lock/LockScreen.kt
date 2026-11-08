@@ -46,6 +46,7 @@ fun LockScreen(
     verifyRecoveryCode: (String) -> Boolean,
     onRecover: (String, String) -> Boolean,
     onUnlock: () -> Unit,
+    onShown: () -> Unit = {},
 ) {
     var input by remember { mutableStateOf("") }
     var error by remember { mutableStateOf(false) }
@@ -108,6 +109,9 @@ fun LockScreen(
         hint = null
         runCatching { prompt?.authenticate(promptInfo) }
     }
+
+    // 锁屏已经画出来了，可以把上锁时盖的挡板撤掉（否则会挡住锁屏自己）
+    LaunchedEffect(Unit) { onShown() }
 
     // 锁屏一出现就拉指纹，用户不用多点一次
     LaunchedEffect(canUseBiometric) {

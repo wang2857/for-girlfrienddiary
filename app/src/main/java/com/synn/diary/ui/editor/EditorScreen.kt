@@ -104,6 +104,8 @@ import kotlinx.coroutines.delay
 fun EditorScreen(
     viewModel: EditorViewModel,
     onBack: () -> Unit,
+    onExternalUiStart: () -> Unit = {},
+    onExternalUiEnd: () -> Unit = {},
 ) {
     val imageFile = LocalImageFiles.current
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -149,12 +151,14 @@ fun EditorScreen(
     val backgroundPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
+        onExternalUiEnd()
         if (uri != null) viewModel.importBackground(uri)
     }
 
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
+        onExternalUiEnd()
         if (uri != null) {
             viewModel.importImage(uri) { fileName ->
                 if (fileName != null) {
@@ -232,6 +236,7 @@ fun EditorScreen(
         bottomBar = {
             EditorToolbar(
                 onInsertImage = {
+                    onExternalUiStart()
                     imagePicker.launch(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
                     )
@@ -519,6 +524,7 @@ fun EditorScreen(
             },
             onPickCustom = {
                 showBackgroundPicker = false
+                onExternalUiStart()
                 backgroundPicker.launch(
                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
                 )

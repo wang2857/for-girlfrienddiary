@@ -85,6 +85,7 @@ fun SettingsScreen(
     val notifyPermission = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
+        onExternalUiEnd()
         if (granted) {
             ReminderScheduler.setEnabled(context, true)
             reminderOn = true
@@ -258,6 +259,8 @@ fun SettingsScreen(
                             Manifest.permission.POST_NOTIFICATIONS,
                         ) != PackageManager.PERMISSION_GRANTED
                     ) {
+                        // 权限框也算"系统界面"：不挡着就上锁的话，回来直接被踢去锁屏
+                        onExternalUiStart()
                         notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
                     } else {
                         Toast.makeText(context, "系统里这个应用的通知被关掉了，先在系统设置里打开", Toast.LENGTH_LONG).show()
