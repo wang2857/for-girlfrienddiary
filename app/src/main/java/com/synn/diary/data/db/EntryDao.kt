@@ -3,8 +3,10 @@ package com.synn.diary.data.db
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.RawQuery
 import androidx.room.Transaction
 import androidx.room.Update
+import androidx.sqlite.db.SupportSQLiteQuery
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -43,6 +45,7 @@ interface EntryDao {
     fun observeByTag(tagId: Long, onlyFavorites: Int, limit: Int): Flow<List<EntryWithTags>>
 
     /** 中文场景先用 LIKE：几万条内够用，等数据量上来再换 FTS5 trigram。 */
+    /** LIKE 兜底：短查询、或设备上 FTS5 装不上时用。 */
     @Transaction
     @Query(
         """
@@ -55,6 +58,11 @@ interface EntryDao {
         """,
     )
     fun search(keyword: String): Flow<List<EntryWithTags>>
+
+    /** 走 FTS5 索引；SQL 里引用的是虚拟表，Room 编译期解析不了，所以用 RawQuery。 */
+    @Transaction
+    @RawQuery(observedEntities = [EntryEntity::class, EntryTagEntity::class, TagEntity::class])
+    fun searchFts(query: SupportSQLiteQuery): Flow<List<EntryWithTags>>
 
     @Transaction
     @Query(

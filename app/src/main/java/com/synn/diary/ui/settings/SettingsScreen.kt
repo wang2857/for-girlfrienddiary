@@ -69,7 +69,7 @@ fun SettingsScreen(
     onDisableLock: () -> Unit,
     onOpenTrash: () -> Unit,
     onExport: (android.net.Uri, () -> Unit) -> Unit,
-    onImport: (android.net.Uri) -> Unit,
+    onImport: (android.net.Uri, () -> Unit) -> Unit,
     onMergeImport: (android.net.Uri, () -> Unit) -> Unit,
     pendingImport: kotlinx.coroutines.flow.StateFlow<android.net.Uri?>,
     onPickImport: (android.net.Uri) -> Unit,
@@ -432,7 +432,8 @@ fun SettingsScreen(
                 TextButton(onClick = {
                     onClearPendingImport()
                     busy = "正在导入…"
-                    onImport(uri)
+                    // 成功会重启应用；失败时必须把 busy 清掉，否则整页按钮全被卡住
+                    onImport(uri) { busy = null }
                 }) { Text("覆盖导入") }
             },
             dismissButton = {

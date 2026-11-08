@@ -2,12 +2,19 @@ package com.synn.diary.data.db
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import androidx.room.migration.Migration
+import androidx.room.RoomDatabase.Callback
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+/**
+ * 数据库 v8。
+ *
+ * 0.35.0 起**不再维护升级链**：这个 app 从没发布过，旧库的唯一出路是删掉重建
+ * （容器里配了 `fallbackToDestructiveMigration`）。这样 schema 可以随便调，
+ * 不用为几年前的结构背迁移代码；真要发布，再把迁移补起来。
+ */
 @Database(
     entities = [EntryEntity::class, TagEntity::class, EntryTagEntity::class],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -18,89 +25,11 @@ abstract class AppDatabase : RoomDatabase() {
 
     companion object {
 
-        /**
-         * v6 → v7：删掉 attachment 表。
-         *
-         * 它从加进来那天起就只写不读——图片的归属一直由正文里的 `[[img:…]]` 标记决定，
-         * 孤儿清理扫的是目录，不是这张表。留着只会慢慢和真实状态对不上。
-         */
-        val MIGRATION_6_7 = object : Migration(6, 7) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("DROP TABLE IF EXISTS `attachment`")
-            }
-        }
+        /** 建库/开库时把全文索引装好（幂等）。 */
+        val SEARCH_INDEX_CALLBACK = object : Callback() {
+            override fun onCreate(db: SupportSQLiteDatabase) = FullTextIndex.install(db)
 
-        /**
-         * v1 → v2：只新增 tag / entry_tag 两张表，entry 表一个字段都没动。
-         * 手写迁移而不是 destructive migration —— 手机上已经装了 v1，升级不能丢记录。
-         */
-        val MIGRATION_1_2 = object : Migration(1, 2) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
-                    "CREATE TABLE IF NOT EXISTS `tag` (" +
-                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-                        "`name` TEXT NOT NULL, " +
-                        "`createdAt` INTEGER NOT NULL)",
-                )
-                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_tag_name` ON `tag` (`name`)")
-                db.execSQL(
-                    "CREATE TABLE IF NOT EXISTS `entry_tag` (" +
-                        "`entryId` INTEGER NOT NULL, " +
-                        "`tagId` INTEGER NOT NULL, " +
-                        "PRIMARY KEY(`entryId`, `tagId`), " +
-                        "FOREIGN KEY(`entryId`) REFERENCES `entry`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE, " +
-                        "FOREIGN KEY(`tagId`) REFERENCES `tag`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)",
-                )
-                db.execSQL("CREATE INDEX IF NOT EXISTS `index_entry_tag_tagId` ON `entry_tag` (`tagId`)")
-            }
-        }
-
-        /**
-         * v5 → v6：加收藏与单篇锁两个布尔列。老记录默认 false / false。
-         */
-        val MIGRATION_5_6 = object : Migration(5, 6) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE `entry` ADD COLUMN `favorite` INTEGER NOT NULL DEFAULT 0")
-                db.execSQL("ALTER TABLE `entry` ADD COLUMN `locked` INTEGER NOT NULL DEFAULT 0")
-            }
-        }
-
-        /**
-         * v4 → v5：entry 加一个可空的 background，存纸张底色 id。老记录一律 NULL（默认纸）。
-         */
-        val MIGRATION_4_5 = object : Migration(4, 5) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE `entry` ADD COLUMN `background` TEXT")
-            }
-        }
-
-        /**
-         * v3 → v4：新增 attachment 表。正文里存的是 `[[img:文件名]]` 标记，图片文件放 files/images/。
-         */
-        val MIGRATION_3_4 = object : Migration(3, 4) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
-                    "CREATE TABLE IF NOT EXISTS `attachment` (" +
-                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-                        "`entryId` INTEGER NOT NULL, " +
-                        "`relPath` TEXT NOT NULL, " +
-                        "`createdAt` INTEGER NOT NULL, " +
-                        "FOREIGN KEY(`entryId`) REFERENCES `entry`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)",
-                )
-                db.execSQL("CREATE INDEX IF NOT EXISTS `index_attachment_entryId` ON `attachment` (`entryId`)")
-            }
-        }
-
-        /**
-         * v2 → v3：entry 加四个可空列（天气、地点、经纬度）。老记录一律 NULL，不编造历史天气。
-         */
-        val MIGRATION_2_3 = object : Migration(2, 3) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE `entry` ADD COLUMN `weatherText` TEXT")
-                db.execSQL("ALTER TABLE `entry` ADD COLUMN `locationText` TEXT")
-                db.execSQL("ALTER TABLE `entry` ADD COLUMN `latitude` REAL")
-                db.execSQL("ALTER TABLE `entry` ADD COLUMN `longitude` REAL")
-            }
+            override fun onOpen(db: SupportSQLiteDatabase) = FullTextIndex.install(db)
         }
     }
 }

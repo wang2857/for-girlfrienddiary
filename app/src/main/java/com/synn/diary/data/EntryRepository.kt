@@ -5,12 +5,14 @@ import com.synn.diary.data.db.EntryEntity
 import com.synn.diary.data.db.DayMoodRow
 import com.synn.diary.data.db.EntryTagEntity
 import com.synn.diary.data.db.EntryWithTags
+import com.synn.diary.data.db.FullTextIndex
 import com.synn.diary.data.db.TagDao
 import com.synn.diary.data.db.TagEntity
 import com.synn.diary.util.Dates
 import java.util.UUID
 import com.synn.diary.data.body.BodyMarkers
 import com.synn.diary.data.media.ImageStore
+import androidx.sqlite.db.SimpleSQLiteQuery
 import kotlinx.coroutines.flow.Flow
 
 class EntryRepository(
@@ -97,7 +99,29 @@ class EntryRepository(
         return entryDao.purgeExpired(cutoff)
     }
 
-    fun search(keyword: String): Flow<List<EntryWithTags>> = entryDao.search(keyword)
+    /**
+     * 搜索：3 个字符（含中文，按字符算）以上走 FTS5 索引，更短的退回 LIKE。
+     *
+     * trigram 分词器只索引 3 字窗口，所以两字查询注定命不中，不如直接 LIKE——
+     * 短词本身区分度低，全表扫一遍也不慢。
+     */
+    fun search(keyword: String): Flow<List<EntryWithTags>> {
+        val clean = keyword.trim()
+        if (clean.length < 3 || !FullTextIndex.enabled) return entryDao.search(clean)
+        return entryDao.searchFts(
+            SimpleSQLiteQuery(
+                """
+                SELECT * FROM entry
+                WHERE deletedAt IS NULL
+                  AND locked = 0
+                  AND (length(trim(title)) > 0 OR length(trim(body)) > 0)
+                  AND id IN (SELECT rowid FROM entry_fts WHERE entry_fts MATCH ?)
+                ORDER BY entryDate DESC, createdAt DESC
+                """.trimIndent(),
+                arrayOf(FullTextIndex.matchQuery(clean)),
+            ),
+        )
+    }
 
     fun entriesOfDay(epochDay: Long): Flow<List<EntryWithTags>> = entryDao.observeDay(epochDay)
 

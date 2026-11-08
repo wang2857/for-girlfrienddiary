@@ -144,8 +144,14 @@ class BackupManager(
             val json = JSONObject(File(staging, MANIFEST).readText())
             val schemaVersion = json.optInt("schemaVersion", 0)
             val currentVersion = database.openHelper.readableDatabase.version
-            require(schemaVersion in 1..currentVersion) {
+            require(schemaVersion <= currentVersion) {
                 "备份来自更新的版本（库 v$schemaVersion，本机 v$currentVersion），请先升级应用"
+            }
+            // v8 起不再维护升级链：旧库导进来也会被"删表重建"，等于把数据吞了，
+            // 所以直接拒绝，而不是让它悄悄变成空库
+            require(schemaVersion >= MIN_BACKUP_SCHEMA) {
+                "备份来自旧版本（库 v$schemaVersion），当前数据库已重排到 v$currentVersion，" +
+                    "只接受 v$MIN_BACKUP_SCHEMA 之后导出的备份"
             }
 
             val info = BackupInfo(
@@ -416,6 +422,8 @@ class BackupManager(
     }
 
     private companion object {
+        /** 与 AppDatabase.version 对齐：小于这个版本的备份一律不导入。 */
+        const val MIN_BACKUP_SCHEMA = 8
         const val DB_NAME = "diary.db"
         const val MANIFEST = "manifest.json"
         const val IMAGE_DIR = "images"

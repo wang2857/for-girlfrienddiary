@@ -1,4 +1,4 @@
-# 数据库格式（v7，SQLCipher 加密）
+# 数据库格式（v8，SQLCipher 加密 + FTS5）
 
 这页写给"三个月后想用 sqlite3 直接查点什么"的自己。所有内容都对着设备上真实的库核对过。
 
@@ -152,21 +152,27 @@ v3 加过一张 `attachment` 表记录"某条日记用过哪些图"，但从来�
 - 图片文件名是随机 UUID，同名即同图，本地已有就不重复拷
 - 全部写在一个 Room 事务里；失败整批回滚
 
-## 6. 迁移链
+## 6. 版本策略
 
-| 版本 | 改了什么 |
-|---|---|
-| 1 → 2 | 新增 `tag`、`entry_tag` |
-| 2 → 3 | `entry` 加天气、地点、经纬度四列 |
-| 3 → 4 | 新增 `attachment` |
-| 4 → 5 | `entry` 加 `background` |
-| 5 → 6 | `entry` 加 `favorite`、`locked` |
-| 6 → 7 | 删除 `attachment` |
+**v8 起不保留升级链**：app 从没发布过，旧库一律删掉重建
+（Room 的 `fallbackToDestructiveMigration`）。这样改 schema 不用背历史包袱；
+真到要发布那天，再从当时的版本开始写迁移。
 
-每步都在真机上验过。`app/schemas/<版本>.json` 是 Room 编译期导出的权威结构，
-改字段必须同时写迁移，否则启动直接崩。
+`app/schemas/<版本>.json` 是 Room 编译期导出的权威结构。
 
-## 7. 几个常用查询
+### 全文索引（v8 新增）
+
+```sql
+CREATE VIRTUAL TABLE entry_fts USING fts5(title, body, tokenize='trigram');
+```
+
+- 用 trigram 分词：中文不需要词典，3 个字符以上的任意子串都能命中
+- 三个触发器跟着 `entry` 自动同步（INSERT / DELETE / UPDATE OF title, body）
+- 开库时校验 `entry` 与 `entry_fts` 条数，不一致就整表重建
+- 查询：`id IN (SELECT rowid FROM entry_fts WHERE entry_fts MATCH ?)`
+- 2 个字及以下的查询退回 `LIKE`（trigram 只索引 3 字窗口，短词本身区分度也低）
+
+## 7. 常用查询
 
 ```sql
 -- 每个月写了多少篇（不含回收站、不含空壳）

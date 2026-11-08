@@ -202,7 +202,7 @@ fun DiaryNavHost(container: AppContainer) {
                 onExternalUiStart = { container.externalUiInProgress = true },
                 onExternalUiEnd = { container.externalUiInProgress = false },
                 onClearPendingImport = { container.pendingImportUri.value = null },
-                onImport = { uri ->
+                onImport = { uri, done ->
                     scope.launch {
                         val result = container.backupManager.import(uri)
                         result.onSuccess {
@@ -211,6 +211,7 @@ fun DiaryNavHost(container: AppContainer) {
                             restartApp(context)
                         }.onFailure {
                             Toast.makeText(context, "导入失败：${it.message}", Toast.LENGTH_LONG).show()
+                            done()
                         }
                     }
                 },

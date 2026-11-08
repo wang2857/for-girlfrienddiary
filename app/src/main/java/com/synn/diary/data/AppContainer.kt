@@ -42,14 +42,9 @@ class AppContainer(context: Context) {
             "diary.db",
         )
             .openHelperFactory(SupportOpenHelperFactory(dbPassphrase.toByteArray()))
-            .addMigrations(
-            AppDatabase.MIGRATION_1_2,
-            AppDatabase.MIGRATION_2_3,
-            AppDatabase.MIGRATION_3_4,
-            AppDatabase.MIGRATION_4_5,
-            AppDatabase.MIGRATION_5_6,
-            AppDatabase.MIGRATION_6_7,
-            )
+                .addCallback(AppDatabase.SEARCH_INDEX_CALLBACK)
+            // 老库直接丢：没有升级链，版本对不上就重建（对应的数据按产品决定放弃）
+            .fallbackToDestructiveMigration(true)
             .build()
     }
 
