@@ -1,15 +1,25 @@
 package com.synn.diary.ui.settings
 
 import android.Manifest
+import android.content.ClipData
+import android.content.Context
+import android.content.ClipboardManager
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import android.widget.Toast
+import com.synn.diary.data.AppContainer
+import com.synn.diary.data.backup.AutoBackup
+import com.synn.diary.data.backup.AutoBackupScheduler
 import com.synn.diary.notify.DailyReminder
 import com.synn.diary.notify.ReminderScheduler
+import com.synn.diary.ui.lock.RecoveryCodeDialog
+import com.synn.diary.util.CrashLog
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +27,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,23 +43,28 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.synn.diary.data.lock.LockManager
 import com.synn.diary.ui.components.DiaryBottomBar
 import com.synn.diary.ui.lock.biometricAvailable
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    lockManager: LockManager,
+    container: AppContainer,
     onDisableLock: () -> Unit,
     onOpenTrash: () -> Unit,
     onExport: (android.net.Uri) -> Unit,
@@ -61,6 +77,8 @@ fun SettingsScreen(
     onSelectTab: (String) -> Unit,
 ) {
     val context = LocalContext.current
+    val lockManager = container.lockManager
+    val scope = rememberCoroutineScope()
     val lockEnabled by lockManager.enabled.collectAsStateWithLifecycle()
     var reminderOn by remember { mutableStateOf(DailyReminder.isEnabled(context)) }
     val notifyPermission = rememberLauncherForActivityResult(
@@ -76,6 +94,37 @@ fun SettingsScreen(
     }
 
     var showSetPin by remember { mutableStateOf(false) }
+    var showResetRecovery by remember { mutableStateOf(false) }
+    var pendingRecoveryCode by remember { mutableStateOf<String?>(null) }
+    var showCrashLog by remember { mutableStateOf(false) }
+    // 每次进设置页重新扫一遍：闪退之后重开应用，这里才拿得到上一次的记录
+    var crashFiles by remember { mutableStateOf(CrashLog.files(context)) }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        crashFiles = CrashLog.files(context)
+    }
+
+    var autoBackupOn by remember { mutableStateOf(AutoBackup.isEnabled(context)) }
+    var autoBackupBusy by remember { mutableStateOf(false) }
+    var lastBackupAt by remember { mutableStateOf(AutoBackup.lastRunAt(context)) }
+    var lastBackupNote by remember { mutableStateOf(AutoBackup.lastNote(context)) }
+
+    /** 备份可能跑几秒，统一走这个入口，顺便把界面上的时间刷一下。 */
+    fun runBackupNow() {
+        if (autoBackupBusy) return
+        autoBackupBusy = true
+        scope.launch {
+            val result = AutoBackup.run(context, container)
+            autoBackupBusy = false
+            lastBackupAt = AutoBackup.lastRunAt(context)
+            lastBackupNote = AutoBackup.lastNote(context)
+            Toast.makeText(
+                context,
+                result.fold({ "已备份一份" }, { "备份失败：${it.message}" }),
+                Toast.LENGTH_LONG,
+            ).show()
+        }
+    }
+
     val pending by pendingImport.collectAsState()
     var busy by remember { mutableStateOf<String?>(null) }
     val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -104,6 +153,8 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(inner)
+                // 设置项已经超过一屏，不滚动的话最下面的"立即备份"和"崩溃日志"点不到
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp),
         ) {
             Spacer(Modifier.height(8.dp))
@@ -132,6 +183,22 @@ fun SettingsScreen(
                     title = "修改密码",
                     subtitle = "4 位数字",
                     onClick = { showSetPin = true },
+                )
+                SettingActionRow(
+                    title = "恢复码",
+                    subtitle = if (lockManager.hasRecoveryCode()) {
+                        "忘了密码时用它重置，记得放在哪"
+                    } else {
+                        "还没生成，强烈建议现在设一个"
+                    },
+                    actionLabel = if (lockManager.hasRecoveryCode()) "重设" else "生成",
+                    onClick = {
+                        if (lockManager.hasRecoveryCode()) {
+                            showResetRecovery = true
+                        } else {
+                            pendingRecoveryCode = lockManager.resetRecoveryCode()
+                        }
+                    },
                 )
                 val allowShots by lockManager.allowScreenshots.collectAsStateWithLifecycle()
                 SettingSwitchRow(
@@ -211,6 +278,34 @@ fun SettingsScreen(
                 onClick = onOpenTrash,
             )
 
+            SettingSwitchRow(
+                title = "自动备份",
+                subtitle = if (autoBackupOn) {
+                    val when_ = if (lastBackupAt > 0) "上次 ${formatShortTime(lastBackupAt)}" else "还没跑过"
+                    val note = if (lastBackupNote != null && lastBackupNote != "成功") "（${lastBackupNote}）" else ""
+                    "每天 3:00 存一份，留最近 ${AutoBackup.MAX_COPIES} 份 · $when_$note"
+                } else {
+                    "关着，想留底就手动导出"
+                },
+                checked = autoBackupOn,
+                enabled = !autoBackupBusy,
+                onCheckedChange = { checked ->
+                    autoBackupOn = checked
+                    AutoBackupScheduler.setEnabled(context, checked)
+                    // 打开时立刻存一份，别等到明天凌晨还不知道有没有生效
+                    if (checked) runBackupNow()
+                },
+            )
+
+            if (autoBackupOn) {
+                SettingActionRow(
+                    title = "立即备份",
+                    subtitle = if (autoBackupBusy) "正在打包…" else "现在存一份，不影响每天那次",
+                    actionLabel = if (autoBackupBusy) "…" else "备份",
+                    onClick = { runBackupNow() },
+                )
+            }
+
             SettingActionRow(
                 title = "导出备份",
                 subtitle = busy ?: "把日记和图片打包成一个 zip",
@@ -243,9 +338,26 @@ fun SettingsScreen(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "日记 0.29.0 · 本地存储 · 不上传",
+                text = "日记 ${appVersion(context)} · 本地存储 · 不上传",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            SettingActionRow(
+                title = "崩溃日志",
+                subtitle = if (crashFiles.isEmpty()) {
+                    "没有闪退记录"
+                } else {
+                    "${crashFiles.size} 份 · 最近 ${formatShortTime(crashFiles.first().lastModified())}"
+                },
+                actionLabel = "查看",
+                onClick = {
+                    if (crashFiles.isEmpty()) {
+                        Toast.makeText(context, "还没有闪退记录", Toast.LENGTH_SHORT).show()
+                    } else {
+                        showCrashLog = true
+                    }
+                },
             )
         }
     }
@@ -254,8 +366,10 @@ fun SettingsScreen(
         PinDialog(
             onDismiss = { showSetPin = false },
             onConfirm = { pin ->
-                lockManager.setPin(pin)
+                lockManager.setPin(pin, lockNow = false)
                 showSetPin = false
+                // 引导里选了「以后再说」的人：第一次设密码时补发恢复码
+                lockManager.ensureRecoveryCode()?.let { pendingRecoveryCode = it }
             },
         )
     }
@@ -275,6 +389,46 @@ fun SettingsScreen(
             dismissButton = {
                 TextButton(onClick = onClearPendingImport) { Text("取消") }
             },
+        )
+    }
+
+    if (showResetRecovery) {
+        AlertDialog(
+            onDismissRequest = { showResetRecovery = false },
+            title = { Text("重设恢复码？") },
+            text = { Text("旧的恢复码会立刻作废。如果之前那份还留着，记得划掉。") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showResetRecovery = false
+                        pendingRecoveryCode = lockManager.resetRecoveryCode()
+                    },
+                ) { Text("重设") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetRecovery = false }) { Text("取消") }
+            },
+        )
+    }
+
+    pendingRecoveryCode?.let { code ->
+        RecoveryCodeDialog(code = code, onDismiss = { pendingRecoveryCode = null })
+    }
+
+    if (showCrashLog) {
+        CrashLogDialog(
+            text = remember { CrashLog.files(context).firstOrNull()?.readText().orEmpty() },
+            onCopy = {
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("崩溃日志", CrashLog.files(context).firstOrNull()?.readText().orEmpty()))
+                Toast.makeText(context, "已复制", Toast.LENGTH_SHORT).show()
+            },
+            onClear = {
+                CrashLog.clear(context)
+                crashFiles = CrashLog.files(context)
+                showCrashLog = false
+            },
+            onDismiss = { showCrashLog = false },
         )
     }
 
@@ -383,3 +537,43 @@ private fun PinDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
         dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
     )
 }
+
+@Composable
+private fun CrashLogDialog(
+    text: String,
+    onCopy: () -> Unit,
+    onClear: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("崩溃日志") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                Text(
+                    text = text.ifBlank { "（空）" },
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = FontFamily.Monospace,
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = onCopy) { Text("复制") } },
+        dismissButton = {
+            Row {
+                TextButton(onClick = onClear) { Text("清空") }
+                TextButton(onClick = onDismiss) { Text("关闭") }
+            }
+        },
+    )
+}
+
+private fun formatShortTime(millis: Long): String =
+    SimpleDateFormat("MM-dd HH:mm", Locale.ROOT).format(Date(millis))
+
+private fun appVersion(context: android.content.Context): String = runCatching {
+    context.packageManager.getPackageInfo(context.packageName, 0).versionName
+}.getOrNull() ?: "?"

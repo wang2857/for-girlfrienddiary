@@ -37,51 +37,70 @@ class BackupManager(
 
     suspend fun export(uri: Uri): Result<BackupInfo> = withContext(Dispatchers.IO) {
         runCatching {
-            // 先把 WAL 合并回主库，否则导出的 db 可能缺最近的改动
-            database.openHelper.writableDatabase
-                .query("PRAGMA wal_checkpoint(TRUNCATE)")
-                .use { it.moveToFirst() }
-
-            val images = imageStore.listFiles()
-            val entryCount = database.openHelper.readableDatabase
-                .query("SELECT count(*) FROM entry").use { c ->
-                    if (c.moveToFirst()) c.getInt(0) else 0
-                }
-
-            val info = BackupInfo(
-                exportedAt = System.currentTimeMillis(),
-                schemaVersion = database.openHelper.readableDatabase.version,
-                entryCount = entryCount,
-                imageCount = images.size,
-            )
-
-            context.contentResolver.openOutputStream(uri)?.use { out ->
-                ZipOutputStream(out.buffered()).use { zip ->
-                    zip.putNextEntry(ZipEntry(MANIFEST))
-                    zip.write(
-                        JSONObject()
-                            .put("exportedAt", info.exportedAt)
-                            .put("schemaVersion", info.schemaVersion)
-                            .put("entryCount", info.entryCount)
-                            .put("imageCount", info.imageCount)
-                            .toString()
-                            .toByteArray(),
-                    )
-                    zip.closeEntry()
-
-                    zip.putNextEntry(ZipEntry(DB_NAME))
-                    dbFile.inputStream().use { it.copyTo(zip) }
-                    zip.closeEntry()
-
-                    images.keys.forEach { name ->
-                        zip.putNextEntry(ZipEntry("$IMAGE_DIR/$name"))
-                        imageStore.file(name).inputStream().use { it.copyTo(zip) }
-                        zip.closeEntry()
-                    }
-                }
-            } ?: error("无法写入该位置")
-            info
+            context.contentResolver.openOutputStream(uri)?.use { out -> writeZip(out) }
+                ?: error("无法写入该位置")
         }
+    }
+
+    /**
+     * 自动备份用：直接写到应用私有目录里的文件。
+     * 和手动导出走同一段打包逻辑，免得两份格式慢慢长歪。
+     */
+    suspend fun exportToFile(file: File): BackupInfo = withContext(Dispatchers.IO) {
+        file.parentFile?.mkdirs()
+        val temp = File(file.path + ".part")
+        // 先写临时名再改名：中途没电也不会留下一个看起来完好的半个备份
+        val info = temp.outputStream().buffered().use { out -> writeZip(out) }
+        if (!temp.renameTo(file)) {
+            temp.delete()
+            error("备份文件写入失败")
+        }
+        info
+    }
+
+    private fun writeZip(out: java.io.OutputStream): BackupInfo {
+        // 先把 WAL 合并回主库，否则导出的 db 可能缺最近的改动
+        database.openHelper.writableDatabase
+            .query("PRAGMA wal_checkpoint(TRUNCATE)")
+            .use { it.moveToFirst() }
+
+        val images = imageStore.listFiles()
+        val entryCount = database.openHelper.readableDatabase
+            .query("SELECT count(*) FROM entry").use { c ->
+                if (c.moveToFirst()) c.getInt(0) else 0
+            }
+
+        val info = BackupInfo(
+            exportedAt = System.currentTimeMillis(),
+            schemaVersion = database.openHelper.readableDatabase.version,
+            entryCount = entryCount,
+            imageCount = images.size,
+        )
+
+        ZipOutputStream(out.buffered()).use { zip ->
+            zip.putNextEntry(ZipEntry(MANIFEST))
+            zip.write(
+                JSONObject()
+                    .put("exportedAt", info.exportedAt)
+                    .put("schemaVersion", info.schemaVersion)
+                    .put("entryCount", info.entryCount)
+                    .put("imageCount", info.imageCount)
+                    .toString()
+                    .toByteArray(),
+            )
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry(DB_NAME))
+            dbFile.inputStream().use { it.copyTo(zip) }
+            zip.closeEntry()
+
+            images.keys.forEach { name ->
+                zip.putNextEntry(ZipEntry("$IMAGE_DIR/$name"))
+                imageStore.file(name).inputStream().use { it.copyTo(zip) }
+                zip.closeEntry()
+            }
+        }
+        return info
     }
 
     /** 导入：解压到临时目录 → 校验 → 关库 → 覆盖文件。调用方负责重启应用。 */

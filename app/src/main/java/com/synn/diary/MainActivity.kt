@@ -61,6 +61,8 @@ class MainActivity : FragmentActivity() {
                         LockScreen(
                             biometricEnabled = container.lockManager.biometricEnabled,
                             verifyPin = container.lockManager::verifyPin,
+                            verifyRecoveryCode = container.lockManager::verifyRecoveryCode,
+                            onRecover = container.lockManager::recoverWithCode,
                             onUnlock = container.lockManager::unlock,
                         )
                     } else {

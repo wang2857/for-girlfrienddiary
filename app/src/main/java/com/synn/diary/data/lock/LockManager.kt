@@ -39,12 +39,58 @@ class LockManager(val store: LockStore) {
 
     fun verifyPin(pin: String): Boolean = store.verifyPin(pin)
 
-    /** 设置/修改密码后立即生效并锁一次，避免"设完密码还以为没锁"。 */
-    fun setPin(pin: String) {
+    // ---- 恢复码 ----
+
+    fun hasRecoveryCode(): Boolean = store.hasRecoveryCode()
+
+    /**
+     * 设完密码后调用：还没有恢复码就生成一个并返回明文——
+     * 明文只在这里出现一次，之后只留哈希，抄丢就再也看不到。
+     */
+    fun ensureRecoveryCode(): String? {
+        if (store.hasRecoveryCode()) return null
+        val code = RecoveryCode.generate()
+        store.setRecoveryCode(code)
+        return code
+    }
+
+    /** 设置里「重设恢复码」：旧的那张纸立刻作废。 */
+    fun resetRecoveryCode(): String {
+        val code = RecoveryCode.generate()
+        store.setRecoveryCode(code)
+        return code
+    }
+
+    fun verifyRecoveryCode(code: String): Boolean =
+        store.hasRecoveryCode() && store.verifyRecoveryCode(code)
+
+    /**
+     * 用恢复码换一个新密码。成功就顺手解锁——用户此刻正站在锁屏前，
+     * 再让他输一遍刚设的密码只是添堵。
+     *
+     * 恢复码本身不轮换：写下来的那张纸还能继续用，除非用户主动重设。
+     */
+    fun recoverWithCode(code: String, newPin: String): Boolean {
+        if (!verifyRecoveryCode(code)) return false
+        store.setPin(newPin)
+        store.enabled = true
+        _enabled.value = true
+        _locked.value = false
+        return true
+    }
+
+    /**
+     * 设置/修改密码后立即生效。
+     *
+     * [lockNow] 默认 true：引导页设完密码就锁上，避免"设了密码还以为没锁"。
+     * 设置页里要传 false——用户人就在应用内，一锁会把刚弹出的恢复码顶掉，
+     * 那串码只显示一次，丢了等于白设。
+     */
+    fun setPin(pin: String, lockNow: Boolean = true) {
         store.setPin(pin)
         store.enabled = true
         _enabled.value = true
-        _locked.value = true
+        if (lockNow) _locked.value = true
     }
 
     fun enableLock() {

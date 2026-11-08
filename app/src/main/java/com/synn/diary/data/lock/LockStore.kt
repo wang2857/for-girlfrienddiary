@@ -50,6 +50,26 @@ class LockStore(context: Context) {
         return MessageDigest.isEqual(hash(pin, salt), expected)
     }
 
+    // ---- 恢复码 ----
+    // 和密码一样只存哈希：恢复码的意义是"忘密码时还能证明这手机是你的"，
+    // 存明文等于把它变成第二把随时能捡到的钥匙。
+
+    fun hasRecoveryCode(): Boolean = prefs.contains(KEY_RECOVERY_HASH)
+
+    fun setRecoveryCode(code: String) {
+        val salt = ByteArray(SALT_BYTES).also { SecureRandom().nextBytes(it) }
+        prefs.edit()
+            .putString(KEY_RECOVERY_SALT, encode(salt))
+            .putString(KEY_RECOVERY_HASH, encode(hash(RecoveryCode.normalize(code), salt)))
+            .apply()
+    }
+
+    fun verifyRecoveryCode(code: String): Boolean {
+        val salt = prefs.getString(KEY_RECOVERY_SALT, null)?.let(::decode) ?: return false
+        val expected = prefs.getString(KEY_RECOVERY_HASH, null)?.let(::decode) ?: return false
+        return MessageDigest.isEqual(hash(RecoveryCode.normalize(code), salt), expected)
+    }
+
     fun clear() {
         prefs.edit().clear().apply()
     }
@@ -71,6 +91,8 @@ class LockStore(context: Context) {
         const val KEY_ALLOW_SCREENSHOTS = "allow_screenshots"
         const val KEY_SALT = "salt"
         const val KEY_HASH = "hash"
+        const val KEY_RECOVERY_SALT = "recovery_salt"
+        const val KEY_RECOVERY_HASH = "recovery_hash"
         const val SALT_BYTES = 16
         const val ITERATIONS = 120_000
         const val KEY_BITS = 256

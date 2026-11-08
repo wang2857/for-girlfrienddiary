@@ -34,7 +34,7 @@ import com.synn.diary.ui.lock.biometricAvailable
 
 private const val PIN_LENGTH = 4
 
-private enum class Step { WELCOME, SET_PIN, CONFIRM, FINGERPRINT }
+private enum class Step { WELCOME, SET_PIN, CONFIRM, RECOVERY, FINGERPRINT }
 
 /**
  * 首次安装的三步引导：说明 → 设密码 → 确认。
@@ -51,6 +51,17 @@ fun OnboardingScreen(
     var firstPin by remember { mutableStateOf("") }
     var input by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var recoveryCode by remember { mutableStateOf<String?>(null) }
+
+    fun afterPin() {
+        if (biometricAvailable(context)) {
+            step = Step.FINGERPRINT
+        } else {
+            com.synn.diary.data.Onboarding.markDone(context)
+            lockManager.unlock()
+            onFinish()
+        }
+    }
 
     fun handleComplete(pin: String) {
         when (step) {
@@ -63,12 +74,13 @@ fun OnboardingScreen(
             Step.CONFIRM -> {
                 if (pin == firstPin) {
                     lockManager.setPin(pin)
-                    if (biometricAvailable(context)) {
-                        step = Step.FINGERPRINT
+                    // 恢复码必须在这时候给出去：忘密码时它是唯一的退路
+                    val code = lockManager.ensureRecoveryCode()
+                    if (code != null) {
+                        recoveryCode = code
+                        step = Step.RECOVERY
                     } else {
-                        com.synn.diary.data.Onboarding.markDone(context)
-                        lockManager.unlock()
-                        onFinish()
+                        afterPin()
                     }
                 } else {
                     error = "两次输入不一致，再来一次"
@@ -113,6 +125,11 @@ fun OnboardingScreen(
                     }
                 },
                 onDelete = { if (input.isNotEmpty()) input = input.dropLast(1) },
+            )
+
+            Step.RECOVERY -> RecoveryStep(
+                code = recoveryCode.orEmpty(),
+                onDone = { afterPin() },
             )
 
             Step.FINGERPRINT -> FingerprintStep(
@@ -225,6 +242,51 @@ private fun PinStep(
             Spacer(Modifier.size(64.dp))
             OnboardKey("0") { onDigit("0") }
             OnboardKey("⌫", small = true, onClick = onDelete)
+        }
+    }
+}
+
+@Composable
+private fun RecoveryStep(code: String, onDone: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = "🗝️", fontSize = 44.sp)
+        Spacer(Modifier.height(14.dp))
+        Text(text = "把这串恢复码抄下来", style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = "忘记密码时，只有它能救回日记。\n只显示这一次，抄在纸上或记到别处。",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(22.dp))
+        Text(
+            text = com.synn.diary.data.lock.RecoveryCode.format(code),
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+            fontSize = 17.sp,
+            letterSpacing = 1.5.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(vertical = 18.dp, horizontal = 8.dp),
+        )
+        Spacer(Modifier.height(28.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary)
+                .clickable(onClick = onDone)
+                .padding(vertical = 14.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "我已抄好",
+                color = MaterialTheme.colorScheme.onPrimary,
+                style = MaterialTheme.typography.titleSmall,
+            )
         }
     }
 }

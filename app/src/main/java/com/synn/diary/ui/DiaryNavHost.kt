@@ -160,7 +160,7 @@ fun DiaryNavHost(container: AppContainer) {
 
         composable("settings") {
             SettingsScreen(
-                lockManager = container.lockManager,
+                container = container,
                 onOpenTrash = { navController.navigate("trash") },
                 onExport = { uri ->
                     scope.launch {

@@ -43,11 +43,14 @@ private const val PIN_LENGTH = 4
 fun LockScreen(
     biometricEnabled: Boolean,
     verifyPin: (String) -> Boolean,
+    verifyRecoveryCode: (String) -> Boolean,
+    onRecover: (String, String) -> Boolean,
     onUnlock: () -> Unit,
 ) {
     var input by remember { mutableStateOf("") }
     var error by remember { mutableStateOf(false) }
     var hint by remember { mutableStateOf<String?>(null) }
+    var showForgot by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val activity = context as? FragmentActivity
@@ -157,8 +160,17 @@ fun LockScreen(
                     usePin = false
                     startBiometric()
                 },
+                onForgot = { showForgot = true },
             )
         }
+    }
+
+    if (showForgot) {
+        ForgotPinDialog(
+            verifyCode = verifyRecoveryCode,
+            onRecover = onRecover,
+            onDismiss = { showForgot = false },
+        )
     }
 }
 
@@ -203,6 +215,7 @@ private fun PinPanel(
     onDigit: (String) -> Unit,
     onDelete: () -> Unit,
     onBiometric: () -> Unit,
+    onForgot: () -> Unit,
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text("🔒", fontSize = 40.sp)
@@ -250,6 +263,15 @@ private fun PinPanel(
             }
             KeyButton("0") { onDigit("0") }
             KeyButton("⌫", small = true, onClick = onDelete)
+        }
+
+        Spacer(Modifier.height(10.dp))
+        TextButton(onClick = onForgot) {
+            Text(
+                text = "忘记密码？",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline,
+            )
         }
     }
 }
