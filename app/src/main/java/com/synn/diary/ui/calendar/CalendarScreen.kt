@@ -27,6 +27,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -34,6 +36,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -211,6 +214,15 @@ private fun DayCell(
     onClick: () -> Unit,
 ) {
     val circleColor = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
+    // 今天的格子进来时脉冲一次：圈从中心涨开、淡掉，之后恢复静态描边
+    val pulse = remember { Animatable(1f) }
+    LaunchedEffect(isToday) {
+        if (isToday) {
+            pulse.snapTo(0f)
+            pulse.animateTo(1f, tween(1100, easing = FastOutSlowInEasing))
+        }
+    }
+
     val numberColor = when {
         selected -> MaterialTheme.colorScheme.onPrimary
         isToday -> MaterialTheme.colorScheme.primary
@@ -256,6 +268,21 @@ private fun DayCell(
                         style = MaterialTheme.typography.bodyMedium,
                         color = numberColor,
                         fontWeight = if (selected || isToday) FontWeight.SemiBold else FontWeight.Normal,
+                    )
+                }
+                if (isToday && !selected) {
+                    val p = pulse.value
+                    Box(
+                        modifier = Modifier
+                            .size((26 + 14 * p).dp)
+                            .clip(CircleShape)
+                            .border(
+                                width = 1.2.dp,
+                                color = MaterialTheme.colorScheme.primary.copy(
+                                    alpha = (1f - p) * 0.5f,
+                                ),
+                                shape = CircleShape,
+                            ),
                     )
                 }
                 if (mood != null) {
