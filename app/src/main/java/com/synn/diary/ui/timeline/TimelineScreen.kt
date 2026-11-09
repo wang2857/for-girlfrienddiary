@@ -70,6 +70,7 @@ import com.synn.diary.ui.components.SwipeActionsContainer
 import com.synn.diary.ui.lock.UnlockEntryDialog
 import com.synn.diary.ui.mood.Mood
 import com.synn.diary.ui.components.DoodleChip
+import com.synn.diary.ui.components.DoodleTopBar
 import com.synn.diary.ui.components.doodleBorder
 import com.synn.diary.ui.components.DoodleSearchIcon
 import com.synn.diary.ui.components.DoodleStarIcon
@@ -106,15 +107,9 @@ fun TimelineScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "日记",
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
-                },
+            DoodleTopBar(
+                title = "日记",
                 actions = {
-                    // 用图标代替"搜索"两个字：顶栏少一半文字噪音
                     IconButton(onClick = onOpenSearch) {
                         Icon(
                             imageVector = DoodleSearchIcon,

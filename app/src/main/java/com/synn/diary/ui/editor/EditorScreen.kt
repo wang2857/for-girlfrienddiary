@@ -114,6 +114,7 @@ import com.synn.diary.data.body.ImageAlign
 import com.synn.diary.data.db.TagEntity
 import com.synn.diary.ui.LocalImageFiles
 import com.synn.diary.ui.components.DoodleCheckIcon
+import com.synn.diary.ui.components.doodleDivider
 import com.synn.diary.ui.components.DoodleBackIcon
 import com.synn.diary.ui.components.GlassDialogBlur
 import com.synn.diary.ui.components.LocalGlassEffect
@@ -874,6 +875,16 @@ private fun EditorToolbar(
     onDelete: () -> Unit,
 ) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainer, tonalElevation = 2.dp) {
+        Column {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .doodleDivider(
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f),
+                    seed = 6,
+                ),
+        )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -893,6 +904,7 @@ private fun EditorToolbar(
             ToolbarItem("字体", DoodleTextIcon, onFont, Modifier.weight(1f))
             ToolbarItem("背景", DoodlePaletteIcon, onBackground, Modifier.weight(1f))
             ToolbarItem("删除", DoodleTrashIcon, onDelete, Modifier.weight(1f), error = true)
+        }
         }
     }
 }

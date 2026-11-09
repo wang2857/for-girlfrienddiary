@@ -42,6 +42,7 @@ import com.synn.diary.ui.components.DoodleTextButton
 import com.synn.diary.data.body.BodyMarkers
 import com.synn.diary.data.db.EntryWithTags
 import com.synn.diary.ui.components.DoodleBackIcon
+import com.synn.diary.ui.components.DoodleTopBar
 import com.synn.diary.ui.components.doodleBorder
 import com.synn.diary.util.Dates
 
@@ -66,16 +67,10 @@ fun TrashScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("回收站") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = DoodleBackIcon,
-                            contentDescription = "返回",
-                        )
-                    }
-                },
+            DoodleTopBar(
+                title = "回收站",
+                onBack = onBack,
+                centerTitle = true,
                 actions = {
                     if (items.isNotEmpty()) {
                         DoodleTextButton(onClick = { confirmEmpty = true }) { Text("清空") }

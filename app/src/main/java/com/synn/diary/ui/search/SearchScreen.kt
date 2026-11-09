@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.synn.diary.ui.components.DoodleTextField
+import com.synn.diary.ui.components.DoodleTopBar
 import com.synn.diary.ui.components.DoodleBackIcon
 import com.synn.diary.ui.components.EntryCard
 
@@ -43,16 +44,10 @@ fun SearchScreen(
     Scaffold(
         topBar = {
             // 标题居中，返回用图形按钮——和回收站页保持同一种顶栏
-            CenterAlignedTopAppBar(
-                title = { Text("搜索") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = DoodleBackIcon,
-                            contentDescription = "返回",
-                        )
-                    }
-                },
+            DoodleTopBar(
+                title = "搜索",
+                onBack = onBack,
+                centerTitle = true,
             )
         },
     ) { inner ->

@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.synn.diary.ui.components.DoodleTextButton
+import com.synn.diary.ui.components.DoodleTopBar
 import com.synn.diary.ui.components.DiaryBottomBar
 import com.synn.diary.ui.components.EntryCard
 import com.synn.diary.util.Dates
@@ -74,7 +75,7 @@ fun CalendarScreen(
     val today = remember { LocalDate.now().toEpochDay() }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("日历") }) },
+        topBar = { DoodleTopBar("日历") },
         bottomBar = { DiaryBottomBar(currentRoute = "calendar", onSelect = onSelectTab) },
     ) { inner ->
         Column(modifier = Modifier.padding(inner).fillMaxSize()) {

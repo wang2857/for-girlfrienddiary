@@ -15,10 +15,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -331,6 +335,111 @@ fun DoodleSectionTitle(text: String) {
                 .doodleDivider(
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
                     seed = text.length,
+                ),
+        )
+    }
+}
+
+/** 手绘顶栏：标题 + 可选返回 + 右侧动作，底部一条手绘分隔线。 */
+@Composable
+fun DoodleTopBar(
+    title: String,
+    modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
+    centerTitle: Boolean = false,
+    actions: @Composable RowScope.() -> Unit = {},
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .statusBarsPadding(),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (onBack != null) {
+                androidx.compose.material3.IconButton(onClick = onBack) {
+                    androidx.compose.material3.Icon(
+                        imageVector = DoodleBackIcon,
+                        contentDescription = "返回",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+            if (!centerTitle) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(start = if (onBack == null) 8.dp else 0.dp),
+                )
+                Spacer(Modifier.weight(1f))
+            } else {
+                Spacer(Modifier.weight(1f))
+                Text(text = title, style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.weight(1f))
+            }
+            actions()
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .doodleDivider(
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f),
+                    seed = 4,
+                ),
+        )
+    }
+}
+
+/** 手绘开关：药丸轨道 + 描边，滑块自己画。 */
+@Composable
+fun DoodleSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true,
+) {
+    val t by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (checked) 1f else 0f,
+        animationSpec = androidx.compose.animation.core.tween(180),
+        label = "doodle-switch",
+    )
+    val track = androidx.compose.ui.graphics.lerp(
+        MaterialTheme.colorScheme.surfaceVariant,
+        MaterialTheme.colorScheme.primaryContainer,
+        t,
+    )
+    Box(
+        modifier = Modifier
+            .width(46.dp)
+            .height(26.dp)
+            .clip(RoundedCornerShape(50))
+            .background(track)
+            .doodleBorder(
+                color = if (checked) MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
+                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.28f),
+                corner = 50.dp,
+                width = 1.2.dp,
+                seed = 3,
+            )
+            .clickable(enabled = enabled) { onCheckedChange(!checked) }
+            .padding(3.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Box(
+            modifier = Modifier
+                .offset(x = (18 * t).dp)
+                .size(20.dp)
+                .clip(androidx.compose.foundation.shape.CircleShape)
+                .background(if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface)
+                .doodleBorder(
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                    corner = 50.dp,
+                    width = 1.dp,
+                    seed = 8,
                 ),
         )
     }

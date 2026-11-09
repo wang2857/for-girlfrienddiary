@@ -13,6 +13,8 @@ import android.widget.Toast
 import com.synn.diary.ui.components.DoodleSectionTitle
 import com.synn.diary.ui.components.DoodleDialog
 import com.synn.diary.ui.components.DoodleTextButton
+import com.synn.diary.ui.components.DoodleSwitch
+import com.synn.diary.ui.components.DoodleTopBar
 import com.synn.diary.data.AppContainer
 import com.synn.diary.data.backup.AutoBackup
 import com.synn.diary.data.backup.AutoBackupScheduler
@@ -195,7 +197,7 @@ fun SettingsScreen(
     val canBiometric = remember { biometricAvailable(context) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("设置") }) },
+        topBar = { DoodleTopBar("设置") },
         bottomBar = { DiaryBottomBar(currentRoute = "settings", onSelect = onSelectTab) },
     ) { inner ->
         Column(
@@ -710,7 +712,7 @@ private fun SettingSwitchRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Switch(
+        DoodleSwitch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             enabled = enabled,
