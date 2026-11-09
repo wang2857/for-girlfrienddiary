@@ -71,6 +71,18 @@ fun DiaryBottomBar(currentRoute: String, onSelect: (String) -> Unit) {
                 .navigationBarsPadding()
                 .height(58.dp),
         ) {
+            // 顶上手绘的一道细线，和纸面的手账感呼应
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .align(Alignment.TopCenter)
+                    .doodleDivider(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f),
+                        seed = 3,
+                    ),
+            )
+
             val selectedIndex = TABS.indexOfFirst { it.second == currentRoute }.coerceAtLeast(0)
 
             // 量一下三个标签的宽度：药丸要刚好裹住字，切到不同 tab 时宽度也要过渡

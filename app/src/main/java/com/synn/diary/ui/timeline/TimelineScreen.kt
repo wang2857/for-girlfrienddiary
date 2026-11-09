@@ -69,6 +69,10 @@ import com.synn.diary.ui.components.SwipeAction
 import com.synn.diary.ui.components.SwipeActionsContainer
 import com.synn.diary.ui.lock.UnlockEntryDialog
 import com.synn.diary.ui.mood.Mood
+import com.synn.diary.ui.components.DoodleChip
+import com.synn.diary.ui.components.doodleBorder
+import com.synn.diary.ui.components.DoodleSearchIcon
+import com.synn.diary.ui.components.DoodleStarIcon
 import com.synn.diary.ui.mood.MoodIcon
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -113,7 +117,7 @@ fun TimelineScreen(
                     // 用图标代替"搜索"两个字：顶栏少一半文字噪音
                     IconButton(onClick = onOpenSearch) {
                         Icon(
-                            imageVector = Icons.Default.Search,
+                            imageVector = DoodleSearchIcon,
                             contentDescription = "搜索",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -126,6 +130,12 @@ fun TimelineScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onCreateEntry,
+                modifier = Modifier.doodleBorder(
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.55f),
+                    corner = 16.dp,
+                    width = 1.2.dp,
+                    seed = 7,
+                ),
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
             ) {
@@ -458,38 +468,36 @@ private fun FilterBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         item(key = "all") {
-            FilterChip(
+            DoodleChip(
                 selected = selectedTag == null && selectedMood == null && !favoritesOnly,
                 onClick = onClear,
-                label = { Text("全部") },
-            )
+                seed = 1,
+            ) { Text("全部") }
         }
 
         item(key = "favorites") {
-            FilterChip(
+            DoodleChip(
                 selected = favoritesOnly,
                 onClick = onToggleFavorites,
-                label = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text("收藏")
-                    }
-                },
-            )
+                seed = 2,
+            ) {
+                Icon(
+                    imageVector = DoodleStarIcon,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(Modifier.width(4.dp))
+                Text("收藏")
+            }
         }
 
         items(tags, key = { "t${it.first}" }) { (id, name) ->
-            FilterChip(
+            DoodleChip(
                 selected = selectedTag == id,
                 onClick = { onSelectTag(if (selectedTag == id) null else id) },
-                label = { Text(name) },
-            )
+                seed = id.toInt(),
+            ) { Text(name) }
         }
 
         if (tags.isNotEmpty()) {
@@ -527,7 +535,7 @@ private fun FilterBar(
                     .clickable { onToggleMood(mood.emoji) },
                 contentAlignment = Alignment.Center,
             ) {
-                MoodIcon(mood = mood, size = 21.dp)
+                MoodIcon(mood = mood, size = 22.dp)
             }
         }
     }
@@ -554,7 +562,7 @@ private fun EmptyTimeline(filtering: Boolean) {
     ) {
         if (filtering) {
             Icon(
-                imageVector = Icons.Default.Search,
+                imageVector = DoodleSearchIcon,
                 contentDescription = null,
                 modifier = Modifier.size(38.dp),
                 tint = MaterialTheme.colorScheme.outline,

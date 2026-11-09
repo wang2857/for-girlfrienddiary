@@ -20,7 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import com.synn.diary.ui.components.LockIcon
+import com.synn.diary.ui.components.DoodleLockIcon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -225,7 +225,7 @@ private fun PinPanel(
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(
-            imageVector = LockIcon,
+            imageVector = DoodleLockIcon,
             contentDescription = null,
             modifier = Modifier.size(42.dp),
             tint = MaterialTheme.colorScheme.primary,

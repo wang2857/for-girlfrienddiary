@@ -285,14 +285,16 @@ private fun DayCell(
                             ),
                     )
                 }
-                if (mood != null) {
-                    Text(
-                        text = mood,
-                        fontSize = 10.sp,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .offset(x = 6.dp, y = (-5).dp),
-                    )
+                mood?.let { emoji ->
+                    com.synn.diary.ui.mood.Mood.fromEmoji(emoji)?.let { moodEnum ->
+                        com.synn.diary.ui.mood.MoodIcon(
+                            mood = moodEnum,
+                            size = 17.dp,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .offset(x = 4.dp, y = (-4).dp),
+                        )
+                    }
                 }
             }
             Text(

@@ -113,6 +113,8 @@ import com.synn.diary.data.PendingWrites
 import com.synn.diary.data.body.ImageAlign
 import com.synn.diary.data.db.TagEntity
 import com.synn.diary.ui.LocalImageFiles
+import com.synn.diary.ui.components.DoodleCheckIcon
+import com.synn.diary.ui.components.DoodleBackIcon
 import com.synn.diary.ui.components.GlassDialogBlur
 import com.synn.diary.ui.components.LocalGlassEffect
 import com.synn.diary.ui.components.DoodleImageIcon
@@ -276,7 +278,7 @@ fun EditorScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = DoodleBackIcon,
                             contentDescription = "返回",
                         )
                     }
@@ -625,7 +627,7 @@ fun EditorScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Check,
+                            imageVector = DoodleCheckIcon,
                             contentDescription = null,
                             modifier = Modifier.size(15.dp),
                             tint = MaterialTheme.colorScheme.inverseOnSurface,

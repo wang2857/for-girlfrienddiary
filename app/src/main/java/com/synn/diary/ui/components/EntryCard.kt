@@ -16,8 +16,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -38,7 +36,9 @@ import coil3.compose.AsyncImage
 import com.synn.diary.data.body.BodyMarkers
 import com.synn.diary.data.db.EntryWithTags
 import com.synn.diary.ui.LocalImageFiles
-import com.synn.diary.ui.components.LockIcon
+import com.synn.diary.ui.components.DoodleLockIcon
+import com.synn.diary.ui.components.DoodleStarIcon
+import com.synn.diary.ui.components.doodleBorder
 import com.synn.diary.ui.mood.Mood
 import com.synn.diary.ui.mood.MoodIcon
 import com.synn.diary.util.Dates
@@ -56,24 +56,22 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
         lerp(m.color, if (dark) Color.White else Color.Black, if (dark) 0.35f else 0.3f)
     }
 
-    Card(
+    // 卡片底色跟着心情走；描边是手绘的，不用 Material 的 Card（它的边太"机"）
+    val cardColor = mood?.let { m ->
+        lerp(
+            MaterialTheme.colorScheme.surfaceVariant,
+            m.color,
+            if (dark) 0.28f else 0.16f,
+        )
+    } ?: MaterialTheme.colorScheme.surfaceVariant
+    val inkLine = MaterialTheme.colorScheme.onSurface.copy(alpha = if (dark) 0.30f else 0.24f)
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
+            .background(cardColor)
+            .doodleBorder(color = inkLine, corner = 20.dp, seed = entry.id.toInt())
             .clickable(onClick = onClick),
-        // 卡片底色跟着心情走：一眼扫下去能看出这段时间的情绪分布。
-        // 直接用 surfaceVariant 做底再往心情色混合——不要依赖 surfaceContainer* 这类角色，
-        // 动态取色关掉时那套角色是 M3 默认的紫灰，卡片会发紫。
-        colors = CardDefaults.cardColors(
-            containerColor = mood?.let { m ->
-                lerp(
-                    MaterialTheme.colorScheme.surfaceVariant,
-                    m.color,
-                    // 深色底太黑，16% 看不出色相；深色给 28%，配 0.35 的提亮，最差对比度仍有 5.2:1
-                    if (dark) 0.28f else 0.16f,
-                )
-            } ?: MaterialTheme.colorScheme.surfaceVariant,
-        ),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // —— 抬头：日期是主信息，其余附注降级成一行小字 ——
@@ -108,7 +106,7 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
 
                 if (entry.favorite) {
                     Icon(
-                        imageVector = Icons.Default.Star,
+                        imageVector = DoodleStarIcon,
                         contentDescription = "已收藏",
                         modifier = Modifier.size(14.dp),
                         tint = accent ?: MaterialTheme.colorScheme.primary,
@@ -117,7 +115,7 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
                 }
                 if (entry.locked) {
                     Icon(
-                        imageVector = LockIcon,
+                        imageVector = DoodleLockIcon,
                         contentDescription = "已上锁",
                         modifier = Modifier.size(13.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -125,20 +123,9 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
                     Spacer(Modifier.width(4.dp))
                 }
 
-                // 心情放在浅色圆底里：emoji 直接压在彩色卡片上会糊
-                entry.mood?.let { emoji ->
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .background(
-                                (mood?.color ?: Color.Transparent)
-                                    .copy(alpha = if (dark) 0.26f else 0.18f),
-                            ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(text = emoji, style = MaterialTheme.typography.bodyMedium)
-                    }
+                // 心情贴纸直接贴上去：自带白边，不再需要灰色圆底
+                mood?.let { current ->
+                    MoodIcon(mood = current, size = 27.dp)
                 }
             }
 
@@ -147,7 +134,7 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = LockIcon,
+                        imageVector = DoodleLockIcon,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
                         tint = MaterialTheme.colorScheme.outline,
@@ -181,7 +168,7 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
                         text = preview,
                         style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 3,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }

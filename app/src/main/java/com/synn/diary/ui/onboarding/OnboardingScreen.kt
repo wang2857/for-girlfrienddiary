@@ -17,7 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import com.synn.diary.ui.components.LockIcon
+import com.synn.diary.ui.components.DoodleLockIcon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -204,7 +204,7 @@ private fun PinStep(
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
         Icon(
-            imageVector = LockIcon,
+            imageVector = DoodleLockIcon,
             contentDescription = null,
             modifier = Modifier.size(38.dp),
             tint = MaterialTheme.colorScheme.primary,

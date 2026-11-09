@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.synn.diary.data.body.BodyMarkers
 import com.synn.diary.data.db.EntryWithTags
+import com.synn.diary.ui.components.DoodleBackIcon
 import com.synn.diary.util.Dates
 
 private val RETENTION_OPTIONS = listOf(
@@ -69,7 +70,7 @@ fun TrashScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = DoodleBackIcon,
                             contentDescription = "返回",
                         )
                     }
