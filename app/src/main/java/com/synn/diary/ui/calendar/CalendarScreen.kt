@@ -79,6 +79,8 @@ fun CalendarScreen(
 
     val today = remember { LocalDate.now().toEpochDay() }
     var showMonthPicker by remember { mutableStateOf(false) }
+    // 已经在本月、且选中的就是今天：按钮淡下去表示"已在家"
+    val atToday = month == YearMonth.now() && selectedDay == today
 
     Scaffold(
         topBar = { DoodleTopBar("日历") },
@@ -91,6 +93,7 @@ fun CalendarScreen(
                 onNext = viewModel::nextMonth,
                 onTitleClick = { showMonthPicker = true },
                 onToday = viewModel::goToToday,
+                atToday = atToday,
             )
 
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
@@ -166,6 +169,7 @@ private fun MonthBar(
     onNext: () -> Unit,
     onTitleClick: () -> Unit,
     onToday: () -> Unit,
+    atToday: Boolean,
 ) {
     Row(
         modifier = Modifier
@@ -202,7 +206,9 @@ private fun MonthBar(
                 .padding(start = 2.dp)
                 .clip(RoundedCornerShape(50))
                 .doodleBorder(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                    color = MaterialTheme.colorScheme.primary.copy(
+                        alpha = if (atToday) 0.16f else 0.45f,
+                    ),
                     corner = 50.dp,
                     width = 1.1.dp,
                     seed = 21,
@@ -213,7 +219,11 @@ private fun MonthBar(
             Text(
                 text = "今天",
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
+                color = if (atToday) {
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
             )
         }
     }
