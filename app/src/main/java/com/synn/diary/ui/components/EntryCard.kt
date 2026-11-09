@@ -40,6 +40,7 @@ import com.synn.diary.data.db.EntryWithTags
 import com.synn.diary.ui.LocalImageFiles
 import com.synn.diary.ui.components.LockIcon
 import com.synn.diary.ui.mood.Mood
+import com.synn.diary.ui.mood.MoodIcon
 import com.synn.diary.util.Dates
 
 @Composable
@@ -124,19 +125,16 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
                     Spacer(Modifier.width(4.dp))
                 }
 
-                // 心情放在浅色圆底里：emoji 直接压在彩色卡片上会糊
-                entry.mood?.let { emoji ->
+                // 心情放在浅色圆底里：图标直接压在彩色卡片上会糊
+                mood?.let { current ->
                     Box(
                         modifier = Modifier
                             .size(28.dp)
                             .clip(CircleShape)
-                            .background(
-                                (mood?.color ?: Color.Transparent)
-                                    .copy(alpha = if (dark) 0.26f else 0.18f),
-                            ),
+                            .background(current.color.copy(alpha = if (dark) 0.26f else 0.18f)),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(text = emoji, style = MaterialTheme.typography.bodyMedium)
+                        MoodIcon(mood = current, size = 18.dp)
                     }
                 }
             }

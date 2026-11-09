@@ -75,6 +75,10 @@ class MainActivity : FragmentActivity() {
                     }
                 }
 
+                androidx.compose.runtime.CompositionLocalProvider(
+                    com.synn.diary.ui.mood.LocalMoodStyle provides
+                        com.synn.diary.ui.mood.MoodStyle.from(container.appearanceSettings.moodStyle),
+                ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -97,6 +101,7 @@ class MainActivity : FragmentActivity() {
                     } else {
                         DiaryNavHost(container = container)
                     }
+                }
                 }
             }
         }

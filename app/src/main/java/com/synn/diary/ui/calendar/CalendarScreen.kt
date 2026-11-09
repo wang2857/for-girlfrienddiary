@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.synn.diary.ui.mood.MoodIcon
 import com.synn.diary.ui.components.DiaryBottomBar
 import com.synn.diary.ui.components.EntryCard
 import com.synn.diary.util.Dates
@@ -285,14 +286,17 @@ private fun DayCell(
                             ),
                     )
                 }
-                if (mood != null) {
-                    Text(
-                        text = mood,
-                        fontSize = 10.sp,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .offset(x = 6.dp, y = (-5).dp),
-                    )
+                mood?.let { emoji ->
+                    val moodEnum = com.synn.diary.ui.mood.Mood.fromEmoji(emoji)
+                    if (moodEnum != null) {
+                        MoodIcon(
+                            mood = moodEnum,
+                            size = 15.dp,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .offset(x = 5.dp, y = (-4).dp),
+                        )
+                    }
                 }
             }
             Text(
