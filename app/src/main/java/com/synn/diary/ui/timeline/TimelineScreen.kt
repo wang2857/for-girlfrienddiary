@@ -24,7 +24,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -34,7 +33,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -54,6 +52,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.synn.diary.ui.components.DoodleDialog
+import com.synn.diary.ui.components.DoodleTextButton
 import com.synn.diary.ui.components.DiaryBottomBar
 import com.synn.diary.ui.components.EntryCard
 import androidx.compose.material3.AssistChip
@@ -279,7 +279,7 @@ fun TimelineScreen(
     }
 
     if (showTagManager) {
-        AlertDialog(
+        DoodleDialog(
             onDismissRequest = { showTagManager = false },
             title = { Text("管理标签") },
             text = {
@@ -295,7 +295,7 @@ fun TimelineScreen(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(tag.name, modifier = Modifier.weight(1f))
-                            TextButton(onClick = { pendingTagDelete = tag.id to tag.name }) {
+                            DoodleTextButton(onClick = { pendingTagDelete = tag.id to tag.name }) {
                                 Text("删除", color = MaterialTheme.colorScheme.error)
                             }
                         }
@@ -303,24 +303,24 @@ fun TimelineScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showTagManager = false }) { Text("完成") }
+                DoodleTextButton(onClick = { showTagManager = false }) { Text("完成") }
             },
         )
     }
 
     pendingTagDelete?.let { (tagId, name) ->
-        AlertDialog(
+        DoodleDialog(
             onDismissRequest = { pendingTagDelete = null },
             title = { Text("删除标签「$name」？") },
             text = { Text("只删标签本身，日记内容不受影响。") },
             confirmButton = {
-                TextButton(onClick = {
+                DoodleTextButton(onClick = {
                     viewModel.deleteTag(tagId)
                     pendingTagDelete = null
                 }) { Text("删除") }
             },
             dismissButton = {
-                TextButton(onClick = { pendingTagDelete = null }) { Text("取消") }
+                DoodleTextButton(onClick = { pendingTagDelete = null }) { Text("取消") }
             },
         )
     }

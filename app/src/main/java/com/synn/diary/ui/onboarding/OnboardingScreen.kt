@@ -16,7 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import com.synn.diary.ui.components.DoodleTextButton
 import com.synn.diary.ui.components.DoodleLockIcon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -186,7 +186,7 @@ private fun WelcomeStep(onStart: () -> Unit, onSkip: () -> Unit) {
             )
         }
         Spacer(Modifier.height(6.dp))
-        TextButton(onClick = onSkip) {
+        DoodleTextButton(onClick = onSkip) {
             Text("以后再说", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -328,7 +328,7 @@ private fun FingerprintStep(onEnable: () -> Unit, onSkip: () -> Unit) {
             )
         }
         Spacer(Modifier.height(6.dp))
-        TextButton(onClick = onSkip) {
+        DoodleTextButton(onClick = onSkip) {
             Text("只用密码", color = MaterialTheme.colorScheme.outline)
         }
     }

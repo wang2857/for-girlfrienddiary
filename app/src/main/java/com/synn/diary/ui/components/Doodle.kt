@@ -1,5 +1,16 @@
 package com.synn.diary.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
@@ -15,7 +26,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -25,6 +35,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.floor
 import kotlin.math.sin
+import com.synn.diary.ui.components.DoodleDialog
+import com.synn.diary.ui.components.DoodleTextButton
 
 /**
  * 手绘描边：四条边各用一小段二次曲线，端点略微抖动。
@@ -192,3 +204,134 @@ private fun doodleVector(name: String, vararg paths: String): ImageVector =
             )
         }
     }.build()
+
+/** 手绘按钮：圆角药丸 + 描边，替代 M3 的 TextButton（直角、无边框）。 */
+@Composable
+fun DoodleTextButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable RowScope.() -> Unit,
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(50))
+            .doodleBorder(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = if (enabled) 0.45f else 0.15f),
+                corner = 50.dp,
+                width = 1.1.dp,
+                seed = 11,
+            )
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        content = content,
+    )
+}
+
+/** 手绘对话框：纸底 + 抖动描边 + 底部按钮排。 */
+@Composable
+fun DoodleDialog(
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    title: (@Composable () -> Unit)? = null,
+    text: (@Composable () -> Unit)? = null,
+    confirmButton: @Composable () -> Unit = {},
+    dismissButton: (@Composable () -> Unit)? = null,
+) {
+    Dialog(onDismissRequest = onDismissRequest) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .doodleBorder(
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.28f),
+                    corner = 24.dp,
+                    width = 1.3.dp,
+                    seed = 5,
+                )
+                .padding(22.dp),
+        ) {
+            title?.let {
+                it()
+                Spacer(Modifier.height(10.dp))
+            }
+            text?.let {
+                it()
+                Spacer(Modifier.height(18.dp))
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                dismissButton?.invoke()
+                if (dismissButton != null) Spacer(Modifier.width(8.dp))
+                confirmButton()
+            }
+        }
+    }
+}
+
+/** 手绘输入框：搜索页用。 */
+@Composable
+fun DoodleTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+) {
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = true,
+        textStyle = MaterialTheme.typography.bodyLarge.copy(
+            color = MaterialTheme.colorScheme.onSurface,
+        ),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .doodleBorder(
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.28f),
+                corner = 16.dp,
+                width = 1.3.dp,
+                seed = 9,
+            )
+            .padding(horizontal = 16.dp, vertical = 13.dp),
+        decorationBox = { inner ->
+            if (value.isEmpty()) {
+                Text(
+                    text = placeholder,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            inner()
+        },
+    )
+}
+
+/** 设置页的分组标题：文字下面一条手绘短线，代替 Material 的直尺。 */
+@Composable
+fun DoodleSectionTitle(text: String) {
+    Column(modifier = Modifier.padding(top = 18.dp, bottom = 6.dp)) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(Modifier.height(5.dp))
+        Box(
+            modifier = Modifier
+                .width(34.dp)
+                .height(1.dp)
+                .doodleDivider(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                    seed = text.length,
+                ),
+        )
+    }
+}

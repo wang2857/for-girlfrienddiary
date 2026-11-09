@@ -19,7 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import com.synn.diary.ui.components.DoodleTextButton
 import com.synn.diary.ui.components.DoodleLockIcon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -208,7 +208,7 @@ private fun FingerprintPanel(
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(28.dp))
-        TextButton(onClick = onUsePin) { Text("用密码") }
+        DoodleTextButton(onClick = onUsePin) { Text("用密码") }
     }
 }
 
@@ -277,7 +277,7 @@ private fun PinPanel(
         }
 
         Spacer(Modifier.height(10.dp))
-        TextButton(onClick = onForgot) {
+        DoodleTextButton(onClick = onForgot) {
             Text(
                 text = "忘记密码？",
                 style = MaterialTheme.typography.bodySmall,

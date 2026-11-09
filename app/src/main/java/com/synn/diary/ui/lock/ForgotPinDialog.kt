@@ -5,11 +5,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,6 +18,8 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.synn.diary.ui.components.DoodleDialog
+import com.synn.diary.ui.components.DoodleTextButton
 
 /**
  * 忘密码时的唯一出路：输恢复码 → 设新密码。
@@ -38,7 +38,7 @@ fun ForgotPinDialog(
     var onNewPin by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    AlertDialog(
+    DoodleDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (onNewPin) "设置新密码" else "用恢复码重置") },
         text = {
@@ -101,7 +101,7 @@ fun ForgotPinDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            DoodleTextButton(
                 enabled = if (onNewPin) pin1.length == 4 && pin2.length == 4 else code.isNotBlank(),
                 onClick = {
                     if (!onNewPin) {
@@ -125,7 +125,7 @@ fun ForgotPinDialog(
                 Text(if (onNewPin) "重置并进入" else "下一步")
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+        dismissButton = { DoodleTextButton(onClick = onDismiss) { Text("取消") } },
     )
 }
 

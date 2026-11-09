@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -26,7 +25,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,9 +37,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.synn.diary.ui.components.DoodleDialog
+import com.synn.diary.ui.components.DoodleTextButton
 import com.synn.diary.data.body.BodyMarkers
 import com.synn.diary.data.db.EntryWithTags
 import com.synn.diary.ui.components.DoodleBackIcon
+import com.synn.diary.ui.components.doodleBorder
 import com.synn.diary.util.Dates
 
 private val RETENTION_OPTIONS = listOf(
@@ -77,7 +78,7 @@ fun TrashScreen(
                 },
                 actions = {
                     if (items.isNotEmpty()) {
-                        TextButton(onClick = { confirmEmpty = true }) { Text("清空") }
+                        DoodleTextButton(onClick = { confirmEmpty = true }) { Text("清空") }
                     }
                 },
             )
@@ -150,12 +151,12 @@ fun TrashScreen(
     }
 
     pendingPurge?.let { target ->
-        AlertDialog(
+        DoodleDialog(
             onDismissRequest = { pendingPurge = null },
             title = { Text("彻底删除？") },
             text = { Text("删除后无法恢复，图片也会一并删掉。") },
             confirmButton = {
-                TextButton(
+                DoodleTextButton(
                     onClick = {
                         viewModel.purge(target.entry.id)
                         pendingPurge = null
@@ -163,18 +164,18 @@ fun TrashScreen(
                 ) { Text("删除") }
             },
             dismissButton = {
-                TextButton(onClick = { pendingPurge = null }) { Text("取消") }
+                DoodleTextButton(onClick = { pendingPurge = null }) { Text("取消") }
             },
         )
     }
 
     if (confirmEmpty) {
-        AlertDialog(
+        DoodleDialog(
             onDismissRequest = { confirmEmpty = false },
             title = { Text("清空回收站？") },
             text = { Text("${items.size} 条记录会被彻底删除，无法恢复。") },
             confirmButton = {
-                TextButton(
+                DoodleTextButton(
                     onClick = {
                         viewModel.emptyTrash()
                         confirmEmpty = false
@@ -182,7 +183,7 @@ fun TrashScreen(
                 ) { Text("清空") }
             },
             dismissButton = {
-                TextButton(onClick = { confirmEmpty = false }) { Text("取消") }
+                DoodleTextButton(onClick = { confirmEmpty = false }) { Text("取消") }
             },
         )
     }
@@ -207,6 +208,12 @@ private fun TrashRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+            .doodleBorder(
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.22f),
+                corner = 14.dp,
+                width = 1.2.dp,
+                seed = entry.id.toInt(),
+            )
             .padding(12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -232,8 +239,8 @@ private fun TrashRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = onRestore) { Text("还原") }
-            TextButton(onClick = onPurge) {
+            DoodleTextButton(onClick = onRestore) { Text("还原") }
+            DoodleTextButton(onClick = onPurge) {
                 Text("彻底删除", color = MaterialTheme.colorScheme.error)
             }
         }

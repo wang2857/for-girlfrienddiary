@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.synn.diary.ui.components.DoodleTextField
 import com.synn.diary.ui.components.DoodleBackIcon
 import com.synn.diary.ui.components.EntryCard
 
@@ -56,14 +57,13 @@ fun SearchScreen(
         },
     ) { inner ->
         Column(modifier = Modifier.padding(inner).fillMaxSize()) {
-            OutlinedTextField(
+            DoodleTextField(
                 value = query,
                 onValueChange = viewModel::onQueryChange,
+                placeholder = "搜标题或正文",
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                singleLine = true,
-                placeholder = { Text("搜标题或正文") },
             )
 
             when {

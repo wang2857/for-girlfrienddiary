@@ -24,7 +24,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
@@ -48,6 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.synn.diary.ui.components.DoodleTextButton
 import com.synn.diary.ui.components.DiaryBottomBar
 import com.synn.diary.ui.components.EntryCard
 import com.synn.diary.util.Dates
@@ -147,14 +147,24 @@ private fun MonthBar(title: String, onPrevious: () -> Unit, onNext: () -> Unit) 
             .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TextButton(onClick = onPrevious) { Text("‹") }
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(50))
+                .clickable(onClick = onPrevious)
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+        ) { Text("‹", style = MaterialTheme.typography.titleLarge) }
         Text(
             text = title,
             modifier = Modifier.weight(1f),
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.titleMedium,
         )
-        TextButton(onClick = onNext) { Text("›") }
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(50))
+                .clickable(onClick = onNext)
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+        ) { Text("›", style = MaterialTheme.typography.titleLarge) }
     }
 }
 

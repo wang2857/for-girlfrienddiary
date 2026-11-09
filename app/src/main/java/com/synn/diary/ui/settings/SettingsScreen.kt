@@ -10,6 +10,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import android.widget.Toast
+import com.synn.diary.ui.components.DoodleSectionTitle
+import com.synn.diary.ui.components.DoodleDialog
+import com.synn.diary.ui.components.DoodleTextButton
 import com.synn.diary.data.AppContainer
 import com.synn.diary.data.backup.AutoBackup
 import com.synn.diary.data.backup.AutoBackupScheduler
@@ -32,14 +35,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -206,11 +207,7 @@ fun SettingsScreen(
                 .padding(horizontal = 20.dp),
         ) {
             Spacer(Modifier.height(8.dp))
-            Text(
-                text = "外观",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            DoodleSectionTitle("外观")
             Spacer(Modifier.height(4.dp))
 
             // 只有 Android 12+ 才有 Material You 取色；更老的系统没这个选项
@@ -294,11 +291,7 @@ fun SettingsScreen(
             )
 
             Spacer(Modifier.height(8.dp))
-            Text(
-                text = "安全",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            DoodleSectionTitle("安全")
             Spacer(Modifier.height(4.dp))
 
             SettingSwitchRow(
@@ -365,11 +358,7 @@ fun SettingsScreen(
             }
 
             Spacer(Modifier.height(20.dp))
-            Text(
-                text = "提醒",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            DoodleSectionTitle("提醒")
             Spacer(Modifier.height(4.dp))
             SettingSwitchRow(
                 title = "每日提醒",
@@ -412,11 +401,7 @@ fun SettingsScreen(
             }
 
             Spacer(Modifier.height(20.dp))
-            Text(
-                text = "数据",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            DoodleSectionTitle("数据")
             Spacer(Modifier.height(4.dp))
             SettingActionRow(
                 title = "回收站",
@@ -490,11 +475,7 @@ fun SettingsScreen(
             )
 
             Spacer(Modifier.height(24.dp))
-            Text(
-                text = "关于",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            DoodleSectionTitle("关于")
             Spacer(Modifier.height(8.dp))
             Text(
                 text = "日记 ${appVersion(context)} · 本地存储 · 不上传",
@@ -539,7 +520,7 @@ fun SettingsScreen(
     }
 
     pending?.let { uri ->
-        AlertDialog(
+        DoodleDialog(
             onDismissRequest = onClearPendingImport,
             title = { Text(if (needsRecoveryCode) "从别的设备恢复？" else "用备份覆盖本机数据？") },
             text = {
@@ -565,7 +546,7 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {
-                TextButton(
+                DoodleTextButton(
                     enabled = !needsRecoveryCode || recoveryInput.isNotBlank(),
                     onClick = {
                         onClearPendingImport()
@@ -577,18 +558,18 @@ fun SettingsScreen(
                 ) { Text(if (needsRecoveryCode) "解密并恢复" else "覆盖导入") }
             },
             dismissButton = {
-                TextButton(onClick = onClearPendingImport) { Text("取消") }
+                DoodleTextButton(onClick = onClearPendingImport) { Text("取消") }
             },
         )
     }
 
     if (showResetRecovery) {
-        AlertDialog(
+        DoodleDialog(
             onDismissRequest = { showResetRecovery = false },
             title = { Text("重设恢复码？") },
             text = { Text("旧的恢复码会立刻作废。如果之前那份还留着，记得划掉。") },
             confirmButton = {
-                TextButton(
+                DoodleTextButton(
                     onClick = {
                         showResetRecovery = false
                         recoveryAgain = false
@@ -599,7 +580,7 @@ fun SettingsScreen(
                 ) { Text("重设") }
             },
             dismissButton = {
-                TextButton(onClick = { showResetRecovery = false }) { Text("取消") }
+                DoodleTextButton(onClick = { showResetRecovery = false }) { Text("取消") }
             },
         )
     }
@@ -623,7 +604,7 @@ fun SettingsScreen(
     }
 
     pendingMerge?.let { uri ->
-        AlertDialog(
+        DoodleDialog(
             onDismissRequest = { pendingMerge = null },
             title = { Text("从别的设备合并？") },
             text = {
@@ -640,7 +621,7 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {
-                TextButton(
+                DoodleTextButton(
                     enabled = mergeCode.isNotBlank(),
                     onClick = {
                         val target = uri
@@ -651,7 +632,7 @@ fun SettingsScreen(
                     },
                 ) { Text("合并") }
             },
-            dismissButton = { TextButton(onClick = { pendingMerge = null }) { Text("取消") } },
+            dismissButton = { DoodleTextButton(onClick = { pendingMerge = null }) { Text("取消") } },
         )
     }
 
@@ -687,12 +668,12 @@ fun SettingsScreen(
     }
 
     if (showDisableConfirm) {
-        AlertDialog(
+        DoodleDialog(
             onDismissRequest = { showDisableConfirm = false },
             title = { Text("关闭应用锁？") },
             text = { Text("关闭后打开应用不再需要密码，截屏保护一并取消；已上锁的日记也会全部解锁——没有密码就没法再验证它们。") },
             confirmButton = {
-                TextButton(
+                DoodleTextButton(
                     onClick = {
                         onDisableLock()
                         biometric = false
@@ -701,7 +682,7 @@ fun SettingsScreen(
                 ) { Text("关闭") }
             },
             dismissButton = {
-                TextButton(onClick = { showDisableConfirm = false }) { Text("取消") }
+                DoodleTextButton(onClick = { showDisableConfirm = false }) { Text("取消") }
             },
         )
     }
@@ -760,7 +741,7 @@ private fun SettingActionRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        TextButton(onClick = onClick) { Text(actionLabel) }
+        DoodleTextButton(onClick = onClick) { Text(actionLabel) }
     }
 }
 
@@ -768,7 +749,7 @@ private fun SettingActionRow(
 private fun PinDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
     var pin by remember { mutableStateOf("") }
 
-    AlertDialog(
+    DoodleDialog(
         onDismissRequest = onDismiss,
         title = { Text("设置 4 位密码") },
         text = {
@@ -783,12 +764,12 @@ private fun PinDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
             )
         },
         confirmButton = {
-            TextButton(
+            DoodleTextButton(
                 onClick = { onConfirm(pin) },
                 enabled = pin.length == 4,
             ) { Text("保存") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+        dismissButton = { DoodleTextButton(onClick = onDismiss) { Text("取消") } },
     )
 }
 
@@ -799,7 +780,7 @@ private fun CrashLogDialog(
     onClear: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
+    DoodleDialog(
         onDismissRequest = onDismiss,
         title = { Text("崩溃日志") },
         text = {
@@ -815,11 +796,11 @@ private fun CrashLogDialog(
                 )
             }
         },
-        confirmButton = { TextButton(onClick = onCopy) { Text("复制") } },
+        confirmButton = { DoodleTextButton(onClick = onCopy) { Text("复制") } },
         dismissButton = {
             Row {
-                TextButton(onClick = onClear) { Text("清空") }
-                TextButton(onClick = onDismiss) { Text("关闭") }
+                DoodleTextButton(onClick = onClear) { Text("清空") }
+                DoodleTextButton(onClick = onDismiss) { Text("关闭") }
             }
         },
     )

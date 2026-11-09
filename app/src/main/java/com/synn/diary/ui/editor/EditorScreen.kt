@@ -45,7 +45,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -63,8 +62,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.layout.BoxScope
+import com.synn.diary.ui.components.DoodleDialog
+import com.synn.diary.ui.components.DoodleTextButton
 import com.synn.diary.ui.LocalBackgroundFiles
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -695,12 +695,12 @@ fun EditorScreen(
     }
 
     if (confirmDelete) {
-        AlertDialog(
+        DoodleDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text("删除这条记录？") },
             text = { Text("会先进回收站，暂时还能找回。") },
             confirmButton = {
-                TextButton(
+                DoodleTextButton(
                     onClick = {
                         confirmDelete = false
                         viewModel.delete(onBack)
@@ -708,7 +708,7 @@ fun EditorScreen(
                 ) { Text("删除") }
             },
             dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) { Text("取消") }
+                DoodleTextButton(onClick = { confirmDelete = false }) { Text("取消") }
             },
         )
     }
@@ -811,7 +811,7 @@ private fun TagDialog(
 ) {
     var input by remember { mutableStateOf("") }
 
-    AlertDialog(
+    DoodleDialog(
         onDismissRequest = onDismiss,
         title = { Text("标签") },
         text = {
@@ -854,12 +854,12 @@ private fun TagDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            DoodleTextButton(
                 onClick = { if (input.isNotBlank()) onCreate(input.trim()) else onDismiss() },
             ) { Text(if (input.isNotBlank()) "添加" else "完成") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("关闭") }
+            DoodleTextButton(onClick = onDismiss) { Text("关闭") }
         },
     )
 }
@@ -958,7 +958,7 @@ private fun FontPickerDialog(
     onDismiss: () -> Unit,
 ) {
     val customFiles = remember(store) { store.list() }
-    AlertDialog(
+    DoodleDialog(
         onDismissRequest = onDismiss,
         title = { Text("正文字体") },
         text = {
@@ -1003,10 +1003,10 @@ private fun FontPickerDialog(
                 }
 
                 Spacer(Modifier.height(6.dp))
-                TextButton(onClick = onImport) { Text("＋ 导入字体（ttf / otf）") }
+                DoodleTextButton(onClick = onImport) { Text("＋ 导入字体（ttf / otf）") }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("完成") } },
+        confirmButton = { DoodleTextButton(onClick = onDismiss) { Text("完成") } },
     )
 }
 
@@ -1050,7 +1050,7 @@ private fun BackgroundPicker(
     val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     val previewPattern = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.22f)
 
-    AlertDialog(
+    DoodleDialog(
         onDismissRequest = onDismiss,
         title = { Text("纸张") },
         text = {
@@ -1123,7 +1123,7 @@ private fun BackgroundPicker(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("完成") }
+            DoodleTextButton(onClick = onDismiss) { Text("完成") }
         },
     )
 }
