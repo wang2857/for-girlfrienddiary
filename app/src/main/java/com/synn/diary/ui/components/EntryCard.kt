@@ -40,6 +40,7 @@ import com.synn.diary.data.db.EntryWithTags
 import com.synn.diary.ui.LocalImageFiles
 import com.synn.diary.ui.components.LockIcon
 import com.synn.diary.ui.mood.Mood
+import com.synn.diary.ui.mood.MoodIcon
 import com.synn.diary.util.Dates
 
 @Composable

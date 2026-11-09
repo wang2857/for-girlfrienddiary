@@ -32,36 +32,76 @@ val SaveIcon: ImageVector by lazy {
     }.build()
 }
 
-/** 工具栏用的几个手绘 24×24 图标，省掉 material-icons-extended 的几 MB。 */
+/** 工具栏图标：和心情表情同一套手绘线稿风（粗圆头描边，不用填充）。 */
 
-val ImageIcon: ImageVector by lazy {
-    vector(
-        "Image",
-        "M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2z" +
-            "M8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z",
-    )
-}
-
-val TextFieldsIcon: ImageVector by lazy {
-    vector("TextFields", "M2.5 4v3h5v12h3V7h5V4h-13zm19 5h-9v3h3v7h3v-7h3V9z")
-}
-
-val PaletteIcon: ImageVector by lazy {
-    vector(
-        "Palette",
-        "M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01" +
-            "-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8z" +
-            "m-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12z" +
-            "m3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8z" +
-            "m5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8z" +
-            "m3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z",
+val DoodleImageIcon: ImageVector by lazy {
+    lineIcon(
+        "DoodleImage",
+        "M6.5 4.5h11a2 2 0 0 1 2 2v11a2 2 0 0 1 -2 2h-11a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2z",
+        "M4.6 16.6l4.2-4.2 3.2 3.2 2.6-2.6 4.8 4.6",
+        "M9.2 9.1a1.2 1.2 0 1 0 0 0.1z",
     )
 }
 
 /** 横线：三条手画的线，最后一条短一点，像随手划的。 */
-val RuledLinesIcon: ImageVector by lazy {
-    vector("RuledLines", "M4 6.4h16v1.7H4zM4 11.15h16v1.7H4zM4 15.9h10.5v1.7H4z")
+val DoodleLinesIcon: ImageVector by lazy {
+    lineIcon(
+        "DoodleLines",
+        "M4.6 7.2h14.8",
+        "M4.6 12h14.8",
+        "M4.6 16.8h9.6",
+    )
 }
+
+val DoodleTextIcon: ImageVector by lazy {
+    lineIcon(
+        "DoodleText",
+        "M4.4 6.8h7.4",
+        "M8.1 6.8v11.4",
+        "M15.2 10.6v7.6",
+        "M13.4 13.4h3.8",
+    )
+}
+
+val DoodlePaletteIcon: ImageVector by lazy {
+    lineIcon(
+        "DoodlePalette",
+        "M12 4.2c-4.3 0-7.8 3.4-7.8 7.7s3.5 7.7 7.8 7.7c1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2" +
+            "-.3-.3-.5-.7-.5-1.1 0-.9.8-1.7 1.7-1.7h1.4c2.5 0 4.5-2 4.5-4.5 0-3-3.4-5.2-8.3-5.2z",
+        "M8.7 11.4a1 1 0 1 0 0 0.1z",
+        "M12 8.3a1 1 0 1 0 0 0.1z",
+        "M15.3 11.4a1 1 0 1 0 0 0.1z",
+    )
+}
+
+val DoodleTrashIcon: ImageVector by lazy {
+    lineIcon(
+        "DoodleTrash",
+        "M4.8 7.2h14.4",
+        "M9.6 7.2V5.4h4.8v1.8",
+        "M6.6 7.2l.9 12.2h9l.9-12.2",
+        "M10 10.6v5.8",
+        "M14 10.6v5.8",
+    )
+}
+
+private fun lineIcon(name: String, vararg paths: String): ImageVector = ImageVector.Builder(
+    name = name,
+    defaultWidth = 24.dp,
+    defaultHeight = 24.dp,
+    viewportWidth = 24f,
+    viewportHeight = 24f,
+).apply {
+    paths.forEach { path ->
+        addPath(
+            pathData = addPathNodes(path),
+            stroke = SolidColor(Color.Black),
+            strokeLineWidth = 1.9f,
+            strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round,
+            strokeLineJoin = androidx.compose.ui.graphics.StrokeJoin.Round,
+        )
+    }
+}.build()
 
 private fun vector(name: String, path: String): ImageVector = ImageVector.Builder(
     name = name,

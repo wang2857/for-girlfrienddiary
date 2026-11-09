@@ -115,12 +115,14 @@ import com.synn.diary.data.db.TagEntity
 import com.synn.diary.ui.LocalImageFiles
 import com.synn.diary.ui.components.GlassDialogBlur
 import com.synn.diary.ui.components.LocalGlassEffect
-import com.synn.diary.ui.components.ImageIcon
-import com.synn.diary.ui.components.PaletteIcon
-import com.synn.diary.ui.components.RuledLinesIcon
+import com.synn.diary.ui.components.DoodleImageIcon
+import com.synn.diary.ui.components.DoodlePaletteIcon
+import com.synn.diary.ui.components.DoodleLinesIcon
+import com.synn.diary.ui.components.DoodleTrashIcon
 import com.synn.diary.ui.components.SaveIcon
-import com.synn.diary.ui.components.TextFieldsIcon
+import com.synn.diary.ui.components.DoodleTextIcon
 import com.synn.diary.ui.mood.Mood
+import com.synn.diary.ui.mood.MoodIcon
 import com.synn.diary.util.Dates
 import kotlinx.coroutines.delay
 
@@ -740,7 +742,7 @@ private fun MoodRow(selected: String?, onSelect: (String) -> Unit) {
                     .clickable { onSelect(mood.emoji) },
                 contentAlignment = Alignment.Center,
             ) {
-                Text(text = mood.emoji, fontSize = 18.sp)
+                MoodIcon(mood = mood, size = 27.dp)
             }
         }
     }
@@ -876,19 +878,19 @@ private fun EditorToolbar(
                 .navigationBarsPadding()
                 .padding(vertical = 4.dp),
         ) {
-            ToolbarItem("图片", ImageIcon, onInsertImage, Modifier.weight(1f))
+            ToolbarItem("图片", DoodleImageIcon, onInsertImage, Modifier.weight(1f))
             ToolbarItem(
                 label = "横线",
-                icon = RuledLinesIcon,
+                icon = DoodleLinesIcon,
                 onClick = onToggleLines,
                 modifier = Modifier.weight(1f),
                 // 关掉时用灰色；打开时用主色，一眼能看出状态
                 muted = !linesOn,
                 active = linesOn,
             )
-            ToolbarItem("字体", TextFieldsIcon, onFont, Modifier.weight(1f))
-            ToolbarItem("背景", PaletteIcon, onBackground, Modifier.weight(1f))
-            ToolbarItem("删除", Icons.Default.Delete, onDelete, Modifier.weight(1f), error = true)
+            ToolbarItem("字体", DoodleTextIcon, onFont, Modifier.weight(1f))
+            ToolbarItem("背景", DoodlePaletteIcon, onBackground, Modifier.weight(1f))
+            ToolbarItem("删除", DoodleTrashIcon, onDelete, Modifier.weight(1f), error = true)
         }
     }
 }
