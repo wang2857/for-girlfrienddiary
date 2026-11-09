@@ -1,26 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 三条横线：本子上写下的字。 -->
+<!-- 一页纸：底色墨绿，纸是米白，三条横线是写下的字。 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- 纸张 -->
     <path
-        android:fillColor="#00000000"
-        android:pathData="M36,40 L72,40"
-        android:strokeColor="#FFFFFF"
-        android:strokeLineCap="round"
-        android:strokeWidth="6" />
+        android:fillColor="#FBF6EC"
+        android:pathData="M38,26h28a4,4 0 0 1 4,4v48a4,4 0 0 1 -4,4h-28a4,4 0 0 1 -4,-4v-48a4,4 0 0 1 4,-4z" />
+    <!-- 折角 -->
     <path
-        android:fillColor="#00000000"
-        android:pathData="M36,54 L72,54"
-        android:strokeColor="#FFFFFF"
-        android:strokeLineCap="round"
-        android:strokeWidth="6" />
+        android:fillColor="#E6DCCB"
+        android:pathData="M62,26 L70,34 L62,34 Z" />
+    <!-- 三条线 -->
     <path
-        android:fillColor="#00000000"
-        android:pathData="M36,68 L56,68"
-        android:strokeColor="#FFFFFF"
-        android:strokeLineCap="round"
-        android:strokeWidth="6" />
+        android:fillColor="#35544A"
+        android:pathData="M42,44h20v3h-20zM42,54h20v3h-20zM42,64h12v3h-12z" />
 </vector>
