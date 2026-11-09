@@ -6,6 +6,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -64,11 +65,32 @@ fun DiaryTheme(
         darkTheme -> DarkColors
         else -> LightColors
     }
+    // 中文断行：按段落规则走 ICU 的 LineBreaker，句号、逗号、后引号不会单独掉到行首
+    val base = Typography()
+    fun androidx.compose.ui.text.TextStyle.cjk() = copy(lineBreak = LineBreak.Paragraph)
+    val typography = base.copy(
+        displayLarge = base.displayLarge.cjk(),
+        displayMedium = base.displayMedium.cjk(),
+        displaySmall = base.displaySmall.cjk(),
+        headlineLarge = base.headlineLarge.cjk(),
+        headlineMedium = base.headlineMedium.cjk(),
+        headlineSmall = base.headlineSmall.cjk(),
+        titleLarge = base.titleLarge.cjk(),
+        titleMedium = base.titleMedium.cjk(),
+        titleSmall = base.titleSmall.cjk(),
+        bodyLarge = base.bodyLarge.cjk(),
+        bodyMedium = base.bodyMedium.cjk(),
+        bodySmall = base.bodySmall.cjk(),
+        labelLarge = base.labelLarge.cjk(),
+        labelMedium = base.labelMedium.cjk(),
+        labelSmall = base.labelSmall.cjk(),
+    )
+
     MaterialTheme(
         colorScheme = colorScheme,
         // 界面文案一律用手机系统字体（中文 ROM 通常是厂商的思源黑体定制版）；
         // 正文字体是"每条日记自己的属性"，由编辑器单独覆盖
-        typography = Typography(),
+        typography = typography,
         shapes = DiaryShapes,
         content = content,
     )
