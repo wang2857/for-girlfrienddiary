@@ -23,6 +23,8 @@ import com.synn.diary.notify.ReminderScheduler
 import com.synn.diary.ui.lock.RecoveryCodeDialog
 import com.synn.diary.ui.lock.VerifyPinDialog
 import com.synn.diary.util.CrashLog
+import androidx.compose.foundation.layout.Box
+import com.synn.diary.ui.components.doodleBorder
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
@@ -53,6 +55,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -226,6 +229,54 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = "深浅色",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(top = 12.dp),
+            )
+            Text(
+                text = "跟随手机，或者固定一种",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    "system" to "跟随系统",
+                    "light" to "浅色",
+                    "dark" to "深色",
+                ).forEach { (id, label) ->
+                    val selected = container.appearanceSettings.themeMode == id
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(50))
+                            .background(
+                                if (selected) MaterialTheme.colorScheme.primaryContainer
+                                else Color.Transparent,
+                            )
+                            .doodleBorder(
+                                color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f),
+                                corner = 50.dp,
+                                width = 1.2.dp,
+                                seed = label.length,
+                            )
+                            .clickable { container.appearanceSettings.setThemeModeId(id) }
+                            .padding(vertical = 9.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(2.dp))

@@ -20,6 +20,15 @@ class AppearanceSettings(context: Context) {
     var dynamicColor: Boolean by mutableStateOf(prefs.getBoolean(KEY_DYNAMIC_COLOR, true))
         private set
 
+    /** 深浅色：system / light / dark。 */
+    var themeMode: String by mutableStateOf(prefs.getString(KEY_THEME, "system")!!)
+        private set
+
+    fun setThemeModeId(value: String) {
+        themeMode = value
+        prefs.edit { putString(KEY_THEME, value) }
+    }
+
     /** 心情图标风格：bear / yellow / ring / crayon。 */
     var moodStyle: String by mutableStateOf(prefs.getString(KEY_MOOD_STYLE, "bear")!!)
         private set
@@ -48,6 +57,7 @@ class AppearanceSettings(context: Context) {
     private companion object {
         const val KEY_DYNAMIC_COLOR = "dynamic_color"
         const val KEY_GLASS = "glass_effect"
+        const val KEY_THEME = "theme_mode"
         const val KEY_MOOD_STYLE = "mood_style"
     }
 }
