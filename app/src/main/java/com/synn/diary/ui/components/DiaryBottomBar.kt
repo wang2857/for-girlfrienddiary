@@ -1,5 +1,7 @@
 package com.synn.diary.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -11,12 +13,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,11 +64,20 @@ private fun TabItem(
             .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // 选中时一条"墨迹"横线，从 8dp 涨到 18dp；没选中就缩成一个小点
+        val ink by animateFloatAsState(
+            targetValue = if (selected) 1f else 0f,
+            animationSpec = tween(220),
+            label = "tab-ink",
+        )
         Box(
             modifier = Modifier
-                .size(5.dp)
+                .height(3.dp)
+                .width((8 + 10 * ink).dp)
                 .clip(CircleShape)
-                .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent),
+                .background(
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.25f + 0.75f * ink),
+                ),
         )
         Spacer(Modifier.height(6.dp))
         Text(
