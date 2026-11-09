@@ -58,6 +58,14 @@ class MainActivity : FragmentActivity() {
                 // 首次安装先走引导（设密码），走完才进主界面
                 var onboarded by remember { mutableStateOf(com.synn.diary.data.Onboarding.isDone(this@MainActivity)) }
 
+                // 深浅色切换时，状态栏/导航栏图标的明暗也要跟着翻；enableEdgeToEdge 只在启动时定一次
+                val darkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+                LaunchedEffect(darkTheme) {
+                    val controller = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+                    controller.isAppearanceLightStatusBars = !darkTheme
+                    controller.isAppearanceLightNavigationBars = !darkTheme
+                }
+
                 // 开关一改立刻生效，不用等下次回到前台
                 LaunchedEffect(lockEnabled, allowScreenshots) {
                     if (lockEnabled && !allowScreenshots) {

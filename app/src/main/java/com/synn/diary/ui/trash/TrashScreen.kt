@@ -115,7 +115,7 @@ fun TrashScreen(
                     "超过 ${RETENTION_OPTIONS.firstOrNull { it.first == retention }?.second ?: "1 个月"}的条目会被自动彻底删除"
                 },
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
             )
 
@@ -127,7 +127,7 @@ fun TrashScreen(
                     Text(
                         text = "回收站是空的",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             } else {
@@ -228,7 +228,7 @@ private fun TrashRow(
             Text(
                 text = "删除于 ${Dates.time(entry.deletedAt ?: 0L)}",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
             TextButton(onClick = onRestore) { Text("还原") }

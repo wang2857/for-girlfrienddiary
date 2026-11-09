@@ -494,7 +494,7 @@ fun EditorScreen(
                         Text(
                             text = "标题（可选）",
                             style = MaterialTheme.typography.titleLarge.copy(fontFamily = contentFamily),
-                            color = MaterialTheme.colorScheme.outline,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     innerTextField()
@@ -538,7 +538,7 @@ fun EditorScreen(
                                             style = MaterialTheme.typography.bodyLarge.copy(
                                                 fontFamily = contentFamily,
                                             ),
-                                            color = MaterialTheme.colorScheme.outline,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
                                     }
                                     innerTextField()
@@ -950,7 +950,7 @@ private fun FontPickerDialog(
                 Text(
                     text = "只改这条日记的正文；界面本身仍用手机系统字体。",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(8.dp))
 
@@ -1097,7 +1097,7 @@ private fun BackgroundPicker(
                 Text(
                     text = "自定义会铺一层淡色蒙版，保证字能看清",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },

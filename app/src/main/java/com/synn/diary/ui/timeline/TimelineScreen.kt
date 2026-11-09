@@ -366,7 +366,7 @@ private fun GroupHeader(
         Text(
             text = "›",
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.outline,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
                 .width(16.dp)
                 .graphicsLayer { rotationZ = if (expanded) 90f else 0f },
@@ -381,7 +381,7 @@ private fun GroupHeader(
         Text(
             text = "$count 篇",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.7f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
         )
     }
 }
@@ -405,7 +405,7 @@ private fun WeekHeader(
         Text(
             text = "›",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.outline,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
                 .width(14.dp)
                 .graphicsLayer { rotationZ = if (expanded) 90f else 0f },
@@ -433,7 +433,7 @@ private fun WeekHeader(
         Text(
             text = "$count 篇",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.7f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
         )
     }
 }
@@ -571,7 +571,7 @@ private fun EmptyTimeline(filtering: Boolean) {
         Text(
             text = if (filtering) "点「全部」回到所有记录。" else "哪怕一句话也算。",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.outline,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
     }

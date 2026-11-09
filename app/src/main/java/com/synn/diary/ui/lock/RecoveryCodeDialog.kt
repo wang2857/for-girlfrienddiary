@@ -64,7 +64,7 @@ fun RecoveryCodeDialog(
                 Text(
                     text = "抄在纸上，或者记到这台手机以外的地方。丢了就只能清空数据重来。",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },

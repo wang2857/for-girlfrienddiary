@@ -155,7 +155,7 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
                     Text(
                         text = "已上锁 · 解锁后查看",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             } else {

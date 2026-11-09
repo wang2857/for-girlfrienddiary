@@ -187,7 +187,7 @@ private fun WelcomeStep(onStart: () -> Unit, onSkip: () -> Unit) {
         }
         Spacer(Modifier.height(6.dp))
         TextButton(onClick = onSkip) {
-            Text("以后再说", color = MaterialTheme.colorScheme.outline)
+            Text("以后再说", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

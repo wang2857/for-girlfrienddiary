@@ -204,7 +204,7 @@ private fun FingerprintPanel(
             text = hint ?: "也可以点下面的按钮改用密码",
             style = MaterialTheme.typography.bodySmall,
             color = if (hint != null) MaterialTheme.colorScheme.error
-            else MaterialTheme.colorScheme.outline,
+            else MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(28.dp))
@@ -237,7 +237,7 @@ private fun PinPanel(
             text = hint ?: if (error) "密码不对，再试一次" else "输入 4 位密码",
             style = MaterialTheme.typography.bodySmall,
             color = if (error || hint != null) MaterialTheme.colorScheme.error
-            else MaterialTheme.colorScheme.outline,
+            else MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Spacer(Modifier.height(24.dp))
@@ -281,7 +281,7 @@ private fun PinPanel(
             Text(
                 text = "忘记密码？",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
