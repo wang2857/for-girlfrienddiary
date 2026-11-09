@@ -20,6 +20,15 @@ class AppearanceSettings(context: Context) {
     var dynamicColor: Boolean by mutableStateOf(prefs.getBoolean(KEY_DYNAMIC_COLOR, true))
         private set
 
+    /** 心情图标风格：bear / yellow / ring / crayon。 */
+    var moodStyle: String by mutableStateOf(prefs.getString(KEY_MOOD_STYLE, "bear")!!)
+        private set
+
+    fun setMoodStyleId(value: String) {
+        moodStyle = value
+        prefs.edit { putString(KEY_MOOD_STYLE, value) }
+    }
+
     /** 液态玻璃：OriginOS 7 默认开，其它系统默认关（只能做到近似效果）。 */
     var glassEffect: Boolean by mutableStateOf(
         prefs.getBoolean(KEY_GLASS, com.synn.diary.util.OsFlavor.supportsLiquidGlass),
@@ -39,5 +48,6 @@ class AppearanceSettings(context: Context) {
     private companion object {
         const val KEY_DYNAMIC_COLOR = "dynamic_color"
         const val KEY_GLASS = "glass_effect"
+        const val KEY_MOOD_STYLE = "mood_style"
     }
 }

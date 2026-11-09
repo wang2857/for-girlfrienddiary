@@ -78,6 +78,10 @@ class MainActivity : FragmentActivity() {
                 androidx.compose.runtime.CompositionLocalProvider(
                     com.synn.diary.ui.components.LocalGlassEffect provides
                         container.appearanceSettings.glassEffect,
+                    com.synn.diary.ui.mood.LocalMoodStyle provides
+                        com.synn.diary.ui.mood.MoodStyle.from(
+                            container.appearanceSettings.moodStyle,
+                        ),
                 ) {
                 Box(
                     modifier = Modifier
