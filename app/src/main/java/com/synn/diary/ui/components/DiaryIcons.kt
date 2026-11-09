@@ -122,3 +122,14 @@ val LockIcon: ImageVector by lazy {
             "M9 7a3 3 0 0 1 6 0v3H9V7z",
     )
 }
+
+/** 线稿软盘：和工具栏那套笔触一致，替代原来实心的 SaveIcon。 */
+val DoodleSaveIcon: ImageVector by lazy {
+    lineIcon(
+        "DoodleSave",
+        "M5.4 4.8h11.4l3.2 3.2v11.2H5.4z",
+        "M8.4 4.8v4.6h7.2V4.8",
+        "M8.2 19.2v-5.4h7.6v5.4",
+        "M9.4 15.2h4.8",
+    )
+}

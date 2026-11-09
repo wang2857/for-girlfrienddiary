@@ -34,6 +34,10 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import com.synn.diary.ui.components.DoodleDialog
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -73,6 +77,7 @@ fun CalendarScreen(
     val dayEntries by viewModel.dayEntries.collectAsStateWithLifecycle()
 
     val today = remember { LocalDate.now().toEpochDay() }
+    var showMonthPicker by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = { DoodleTopBar("日历") },
@@ -83,6 +88,7 @@ fun CalendarScreen(
                 title = month.format(monthTitleFormatter),
                 onPrevious = viewModel::previousMonth,
                 onNext = viewModel::nextMonth,
+                onTitleClick = { showMonthPicker = true },
             )
 
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
@@ -138,10 +144,26 @@ fun CalendarScreen(
             }
         }
     }
+
+    if (showMonthPicker) {
+        MonthPickerDialog(
+            current = month,
+            onPick = {
+                viewModel.goToMonth(it)
+                showMonthPicker = false
+            },
+            onDismiss = { showMonthPicker = false },
+        )
+    }
 }
 
 @Composable
-private fun MonthBar(title: String, onPrevious: () -> Unit, onNext: () -> Unit) {
+private fun MonthBar(
+    title: String,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onTitleClick: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -156,7 +178,11 @@ private fun MonthBar(title: String, onPrevious: () -> Unit, onNext: () -> Unit) 
         ) { Text("‹", style = MaterialTheme.typography.titleLarge) }
         Text(
             text = title,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(10.dp))
+                .clickable(onClick = onTitleClick)
+                .padding(vertical = 6.dp),
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.titleMedium,
         )
@@ -318,6 +344,67 @@ private fun DayCell(
             )
         }
     }
+
+}
+
+@Composable
+private fun MonthPickerDialog(
+    current: YearMonth,
+    onPick: (YearMonth) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var year by remember { mutableIntStateOf(current.year) }
+    DoodleDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("跳到某个月") },
+        text = {
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    DoodleTextButton(onClick = { year -= 1 }) { Text("‹") }
+                    Text(
+                        text = "$year 年",
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    DoodleTextButton(onClick = { year += 1 }) { Text("›") }
+                }
+                Spacer(Modifier.height(12.dp))
+                for (row in 0 until 4) {
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        for (col in 0 until 3) {
+                            val m = row * 3 + col + 1
+                            val selected = year == current.year && m == current.monthValue
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(4.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(
+                                        if (selected) MaterialTheme.colorScheme.primaryContainer
+                                        else Color.Transparent,
+                                    )
+                                    .clickable { onPick(YearMonth.of(year, m)) }
+                                    .padding(vertical = 10.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = "${m}月",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                                    else MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { DoodleTextButton(onClick = onDismiss) { Text("取消") } },
+    )
 }
 
 @Composable

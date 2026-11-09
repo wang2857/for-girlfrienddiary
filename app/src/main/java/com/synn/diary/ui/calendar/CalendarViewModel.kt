@@ -64,6 +64,12 @@ class CalendarViewModel(repository: EntryRepository) : ViewModel() {
         _selectedDay.value = null
     }
 
+    /** 从年月选择器直接跳到某个月。 */
+    fun goToMonth(target: YearMonth) {
+        _month.value = target
+        _selectedDay.value = null
+    }
+
     fun selectDay(epochDay: Long) {
         _selectedDay.value = if (_selectedDay.value == epochDay) null else epochDay
     }

@@ -6,6 +6,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import com.synn.diary.ui.components.doodleBorder
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -122,7 +123,7 @@ import com.synn.diary.ui.components.DoodleImageIcon
 import com.synn.diary.ui.components.DoodlePaletteIcon
 import com.synn.diary.ui.components.DoodleLinesIcon
 import com.synn.diary.ui.components.DoodleTrashIcon
-import com.synn.diary.ui.components.SaveIcon
+import com.synn.diary.ui.components.DoodleSaveIcon
 import com.synn.diary.ui.components.DoodleTextIcon
 import com.synn.diary.ui.mood.Mood
 import com.synn.diary.ui.mood.MoodIcon
@@ -300,7 +301,7 @@ fun EditorScreen(
                         },
                     ) {
                         Icon(
-                            imageVector = SaveIcon,
+                            imageVector = DoodleSaveIcon,
                             contentDescription = "保存",
                         )
                     }
@@ -508,9 +509,15 @@ fun EditorScreen(
                 },
             )
 
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 12.dp),
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp)
+                    .height(1.dp)
+                    .doodleDivider(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.22f),
+                        seed = 12,
+                    ),
             )
 
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -765,22 +772,23 @@ private fun TagRow(
         contentPadding = PaddingValues(0.dp),
     ) {
         items(tags, key = { it.id }) { tag ->
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(50))
-                    .clickable { onRemove(tag.id) },
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .doodleBorder(
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.25f),
+                        corner = 50.dp,
+                        width = 1.1.dp,
+                        seed = tag.id.toInt(),
+                    )
+                    .clickable { onRemove(tag.id) }
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(text = tag.name, style = MaterialTheme.typography.labelMedium)
-                    Spacer(Modifier.width(4.dp))
-                    Text(text = "×", style = MaterialTheme.typography.labelMedium)
-                }
+                Text(text = tag.name, style = MaterialTheme.typography.labelMedium)
+                Spacer(Modifier.width(4.dp))
+                Text(text = "×", style = MaterialTheme.typography.labelMedium)
             }
         }
         item(key = "add") {
