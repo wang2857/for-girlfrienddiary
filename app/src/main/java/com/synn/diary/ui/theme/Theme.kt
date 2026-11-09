@@ -7,11 +7,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.style.LineBreak
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -107,6 +109,12 @@ fun DiaryTheme(
         // 正文字体是"每条日记自己的属性"，由编辑器单独覆盖
         typography = typography,
         shapes = DiaryShapes,
-        content = content,
+        // 没有 Surface 包裹的页面（引导、锁屏）拿不到默认文字色，
+        // 深色模式下会变成黑字黑底。在主题这一层兜底。
+        content = {
+            CompositionLocalProvider(LocalContentColor provides colorScheme.onBackground) {
+                content()
+            }
+        },
     )
 }
