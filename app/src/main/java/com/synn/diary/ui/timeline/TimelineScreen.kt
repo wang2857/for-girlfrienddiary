@@ -26,6 +26,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -37,6 +42,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -100,8 +109,12 @@ fun TimelineScreen(
                 },
                 actions = {
                     // 用图标代替"搜索"两个字：顶栏少一半文字噪音
-                    TextButton(onClick = onOpenSearch) {
-                        Text(text = "🔍", fontSize = 17.sp)
+                    IconButton(onClick = onOpenSearch) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "搜索",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 },
             )
@@ -439,7 +452,18 @@ private fun FilterBar(
             FilterChip(
                 selected = favoritesOnly,
                 onClick = onToggleFavorites,
-                label = { Text("★ 收藏") },
+                label = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text("收藏")
+                    }
+                },
             )
         }
 
@@ -511,11 +535,17 @@ private fun EmptyTimeline(filtering: Boolean) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(
-            text = if (filtering) "🌿" else "🌱",
-            style = MaterialTheme.typography.displaySmall,
-        )
-        Spacer(Modifier.height(18.dp))
+        if (filtering) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = null,
+                modifier = Modifier.size(38.dp),
+                tint = MaterialTheme.colorScheme.outline,
+            )
+        } else {
+            PaperSheet()
+        }
+        Spacer(Modifier.height(26.dp))
         Text(
             text = if (filtering) "这些条件下还没有记录" else "$greeting，今天还没写呢",
             style = MaterialTheme.typography.titleMedium,
@@ -529,6 +559,37 @@ private fun EmptyTimeline(filtering: Boolean) {
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
     }
+}
+
+/** 空状态的一张"空白纸"：几行手划的线，比一个 emoji 更说明这是本子。 */
+@Composable
+private fun PaperSheet() {
+    val shape = RoundedCornerShape(16.dp)
+    val ink = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)
+    val dot = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+    Box(
+        modifier = Modifier
+            .size(width = 128.dp, height = 164.dp)
+            .graphicsLayer { rotationZ = -3f }
+            .shadow(10.dp, shape)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .drawBehind {
+                val startX = 22.dp.toPx()
+                val step = 26.dp.toPx()
+                val endY = size.height - 18.dp.toPx()
+                var y = 54.dp.toPx()
+                var index = 0
+                while (y < endY) {
+                    val endX = if (index == 3) size.width * 0.55f else size.width - 22.dp.toPx()
+                    drawLine(ink, Offset(startX, y), Offset(endX, y), 1.4.dp.toPx())
+                    y += step
+                    index++
+                }
+                // 右上角一个小圆点，像页码
+                drawCircle(dot, radius = 4.dp.toPx(), center = Offset(size.width - 26.dp.toPx(), 24.dp.toPx()))
+            },
+    )
 }
 
 /** 11 → 十一月：跟农历的"九月"呼应，比 "11月" 更像日记本。 */

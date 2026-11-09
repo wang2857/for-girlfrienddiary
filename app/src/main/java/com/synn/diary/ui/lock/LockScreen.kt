@@ -16,9 +16,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import com.synn.diary.ui.components.LockIcon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -222,7 +224,12 @@ private fun PinPanel(
     onForgot: () -> Unit,
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("🔒", fontSize = 40.sp)
+        Icon(
+            imageVector = LockIcon,
+            contentDescription = null,
+            modifier = Modifier.size(42.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
         Spacer(Modifier.height(12.dp))
         Text("日记已锁定", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(4.dp))

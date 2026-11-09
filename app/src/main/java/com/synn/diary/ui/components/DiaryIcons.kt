@@ -72,3 +72,13 @@ private fun vector(name: String, path: String): ImageVector = ImageVector.Builde
 ).apply {
     addPath(pathData = addPathNodes(path), fill = SolidColor(Color.Black))
 }.build()
+
+/** 小锁：列表/锁屏/引导共用。 */
+val LockIcon: ImageVector by lazy {
+    vector(
+        "Lock",
+        "M12 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm6-7h-1V7a5 5 0 0 0-10 0v3H6" +
+            "c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2z" +
+            "M9 7a3 3 0 0 1 6 0v3H9V7z",
+    )
+}

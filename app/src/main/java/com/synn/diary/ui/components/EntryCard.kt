@@ -14,8 +14,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -35,6 +38,7 @@ import coil3.compose.AsyncImage
 import com.synn.diary.data.body.BodyMarkers
 import com.synn.diary.data.db.EntryWithTags
 import com.synn.diary.ui.LocalImageFiles
+import com.synn.diary.ui.components.LockIcon
 import com.synn.diary.ui.mood.Mood
 import com.synn.diary.util.Dates
 
@@ -99,15 +103,21 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
                 Spacer(Modifier.weight(1f))
 
                 if (entry.favorite) {
-                    Text(
-                        text = "★",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = accent ?: MaterialTheme.colorScheme.primary,
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = "已收藏",
+                        modifier = Modifier.size(14.dp),
+                        tint = accent ?: MaterialTheme.colorScheme.primary,
                     )
                     Spacer(Modifier.width(4.dp))
                 }
                 if (entry.locked) {
-                    Text(text = "🔒", style = MaterialTheme.typography.labelSmall)
+                    Icon(
+                        imageVector = LockIcon,
+                        contentDescription = "已上锁",
+                        modifier = Modifier.size(13.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                     Spacer(Modifier.width(4.dp))
                 }
 
@@ -131,11 +141,20 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
             if (entry.locked) {
                 // 上锁的日记在列表里只露时间，正文、图片、标签都不渲染
                 Spacer(Modifier.height(6.dp))
-                Text(
-                    text = "🔒 已上锁 · 解锁后查看",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.outline,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = LockIcon,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.outline,
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "已上锁 · 解锁后查看",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                }
             } else {
                 if (entry.title.isNotBlank()) {
                     Spacer(Modifier.height(8.dp))

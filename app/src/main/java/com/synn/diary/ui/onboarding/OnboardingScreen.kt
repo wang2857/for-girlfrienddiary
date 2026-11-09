@@ -13,9 +13,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import com.synn.diary.ui.components.LockIcon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -201,7 +203,12 @@ private fun PinStep(
     onDelete: () -> Unit,
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
-        Text(text = "🔒", fontSize = 36.sp)
+        Icon(
+            imageVector = LockIcon,
+            contentDescription = null,
+            modifier = Modifier.size(38.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
         Spacer(Modifier.height(10.dp))
         Text(text = title, style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(6.dp))
