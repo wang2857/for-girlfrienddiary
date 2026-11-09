@@ -34,6 +34,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -103,7 +104,11 @@ import com.synn.diary.data.PendingWrites
 import com.synn.diary.data.body.ImageAlign
 import com.synn.diary.data.db.TagEntity
 import com.synn.diary.ui.LocalImageFiles
+import com.synn.diary.ui.components.ImageIcon
+import com.synn.diary.ui.components.PaletteIcon
+import com.synn.diary.ui.components.RuledLinesIcon
 import com.synn.diary.ui.components.SaveIcon
+import com.synn.diary.ui.components.TextFieldsIcon
 import com.synn.diary.ui.mood.Mood
 import com.synn.diary.util.Dates
 import kotlinx.coroutines.delay
@@ -821,17 +826,19 @@ private fun EditorToolbar(
                 .navigationBarsPadding()
                 .padding(vertical = 4.dp),
         ) {
-            ToolbarItem("图片", onInsertImage, Modifier.weight(1f))
+            ToolbarItem("图片", ImageIcon, onInsertImage, Modifier.weight(1f))
             ToolbarItem(
                 label = "横线",
+                icon = RuledLinesIcon,
                 onClick = onToggleLines,
                 modifier = Modifier.weight(1f),
-                // 关掉时用灰色；工具栏现在 5 项，不再用"开/关"后缀占宽度
+                // 关掉时用灰色；打开时用主色，一眼能看出状态
                 muted = !linesOn,
+                active = linesOn,
             )
-            ToolbarItem("字体", onFont, Modifier.weight(1f))
-            ToolbarItem("背景", onBackground, Modifier.weight(1f))
-            ToolbarItem("删除", onDelete, Modifier.weight(1f), error = true)
+            ToolbarItem("字体", TextFieldsIcon, onFont, Modifier.weight(1f))
+            ToolbarItem("背景", PaletteIcon, onBackground, Modifier.weight(1f))
+            ToolbarItem("删除", Icons.Default.Delete, onDelete, Modifier.weight(1f), error = true)
         }
     }
 }
@@ -839,26 +846,37 @@ private fun EditorToolbar(
 @Composable
 private fun ToolbarItem(
     label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     error: Boolean = false,
     muted: Boolean = false,
+    active: Boolean = false,
 ) {
-    Box(
+    val tint = when {
+        error -> MaterialTheme.colorScheme.error
+        active -> MaterialTheme.colorScheme.primary
+        muted -> MaterialTheme.colorScheme.outline
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Column(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
-            .padding(vertical = 10.dp),
-        contentAlignment = Alignment.Center,
+            .padding(vertical = 7.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = tint,
+            modifier = Modifier.size(21.dp),
+        )
+        Spacer(Modifier.height(3.dp))
         Text(
             text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = when {
-                error -> MaterialTheme.colorScheme.error
-                muted -> MaterialTheme.colorScheme.outline
-                else -> MaterialTheme.colorScheme.onSurface
-            },
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+            color = tint,
         )
     }
 }
