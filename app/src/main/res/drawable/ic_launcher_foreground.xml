@@ -8,8 +8,8 @@
     <group
         android:pivotX="54"
         android:pivotY="54"
-        android:scaleX="1.08"
-        android:scaleY="1.08">
+        android:scaleX="0.94"
+        android:scaleY="0.94">
     <path android:fillColor="#FFFFFF" android:pathData="M41.00 25.00 H71.00 A7.00 7.00 0 0 1 78.00 32.00 V76.00 A7.00 7.00 0 0 1 71.00 83.00 H41.00 A7.00 7.00 0 0 1 34.00 76.00 V32.00 A7.00 7.00 0 0 1 41.00 25.00 Z" />
     <path android:fillColor="#E8DFD0" android:pathData="M48.00 33.00 H73.00 A5.00 5.00 0 0 1 78.00 38.00 V78.00 A5.00 5.00 0 0 1 73.00 83.00 H48.00 A5.00 5.00 0 0 1 43.00 78.00 V38.00 A5.00 5.00 0 0 1 48.00 33.00 Z" />
     <path android:fillColor="#FFFFFF" android:pathData="M48.00 31.00 H72.00 A6.00 6.00 0 0 1 78.00 37.00 V75.00 A6.00 6.00 0 0 1 72.00 81.00 H48.00 A6.00 6.00 0 0 1 42.00 75.00 V37.00 A6.00 6.00 0 0 1 48.00 31.00 Z" />
