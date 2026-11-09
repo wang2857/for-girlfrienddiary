@@ -493,7 +493,10 @@ fun EditorScreen(
                                     .onFocusChanged { if (it.isFocused) focusedBlockId = block.id },
                                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                                     color = MaterialTheme.colorScheme.onSurface,
-                                    lineHeight = 26.sp,
+                                    // 17sp / 30sp：中文正文在这个行高下读着最不挤，和 36dp 的横线也还算协调
+                                    fontSize = 17.sp,
+                                    lineHeight = 30.sp,
+                                    letterSpacing = 0.1.sp,
                                     fontFamily = contentFamily,
                                 ),
                                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
