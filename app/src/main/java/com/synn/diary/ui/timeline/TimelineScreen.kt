@@ -318,7 +318,21 @@ private fun GroupHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (sticky) Modifier.background(MaterialTheme.colorScheme.background) else Modifier)
+            .then(
+                if (sticky) {
+                    // 贴顶时底部渐隐：内容从下面滑过去不再"硬切"一条边
+                    val bg = MaterialTheme.colorScheme.background
+                    Modifier.background(
+                        androidx.compose.ui.graphics.Brush.verticalGradient(
+                            0f to bg,
+                            0.7f to bg,
+                            1f to bg.copy(alpha = 0f),
+                        ),
+                    )
+                } else {
+                    Modifier
+                },
+            )
             .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 10.dp),
