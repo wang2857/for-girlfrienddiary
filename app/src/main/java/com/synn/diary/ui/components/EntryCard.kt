@@ -47,7 +47,8 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
     // 按明暗往黑/白方向压一档，保留色相但保证能读。
     val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     val accent = mood?.let { m ->
-        lerp(m.color, if (dark) Color.White else Color.Black, if (dark) 0.25f else 0.3f)
+        // 深色下多往白里提一点：底色叠了 28% 的心情色，不提亮会压到 4.6:1 以下
+        lerp(m.color, if (dark) Color.White else Color.Black, if (dark) 0.35f else 0.3f)
     }
 
     Card(
@@ -59,7 +60,8 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
         // 深色模式下调高一点，否则心情色会被深底吃掉、看起来发灰。
         colors = if (mood != null) {
             CardDefaults.cardColors(
-                containerColor = mood.color.copy(alpha = if (dark) 0.22f else 0.16f),
+                // 深色底太黑，22% 几乎看不出色相；提到 28%，配上面 0.35 的提亮，最差对比度仍有 5.2:1
+                containerColor = mood.color.copy(alpha = if (dark) 0.28f else 0.16f),
             )
         } else {
             CardDefaults.cardColors()
