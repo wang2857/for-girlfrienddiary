@@ -26,6 +26,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -87,13 +94,29 @@ fun CalendarScreen(
             }
             Spacer(Modifier.height(4.dp))
 
-            MonthGrid(
-                month = month,
-                dayInfo = dayInfo,
-                selectedDay = selectedDay,
-                today = today,
-                onSelectDay = viewModel::selectDay,
-            )
+            // 换月时整块网格横向滑一小段：往前翻是向左，往回翻是向右
+            AnimatedContent(
+                targetState = month,
+                transitionSpec = {
+                    val forward = targetState > initialState
+                    val shift = if (forward) 1 else -1
+                    (slideInHorizontally(tween(200)) { width -> shift * width / 5 } +
+                        fadeIn(tween(180)))
+                        .togetherWith(
+                            slideOutHorizontally(tween(180)) { width -> -shift * width / 5 } +
+                                fadeOut(tween(140)),
+                        )
+                },
+                label = "calendar-month",
+            ) { targetMonth ->
+                MonthGrid(
+                    month = targetMonth,
+                    dayInfo = dayInfo,
+                    selectedDay = selectedDay,
+                    today = today,
+                    onSelectDay = viewModel::selectDay,
+                )
+            }
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
 

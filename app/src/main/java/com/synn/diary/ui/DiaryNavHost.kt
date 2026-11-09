@@ -22,6 +22,11 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -111,7 +116,15 @@ fun DiaryNavHost(container: AppContainer) {
         LocalImageFiles provides { name -> container.imageStore.file(name) },
         LocalBackgroundFiles provides { name -> container.imageStore.backgroundFile(name) },
     ) {
-        NavHost(navController = navController, startDestination = ROUTE_TIMELINE) {
+        NavHost(
+            navController = navController,
+            startDestination = ROUTE_TIMELINE,
+            // 页面切换：淡入 + 一点点上浮，别用默认的横向推屏，翻日记不该像翻网页
+            enterTransition = { fadeIn(tween(220)) + slideInVertically(tween(220)) { it / 50 } },
+            exitTransition = { fadeOut(tween(150)) },
+            popEnterTransition = { fadeIn(tween(200)) },
+            popExitTransition = { fadeOut(tween(160)) + slideOutVertically(tween(200)) { it / 50 } },
+        ) {
         composable(ROUTE_TIMELINE) {
             val viewModel: TimelineViewModel = viewModel(
                 factory = VmFactory { TimelineViewModel(container.entryRepository) },
