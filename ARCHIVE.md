@@ -2,19 +2,20 @@
 
 存档时间：**2026-11-09 23:23**
 
-版本：**1.1.0（手绘改版，仅调试包）** ｜ versionCode **77** ｜ 数据库 **v9（SQLCipher + FTS5）** ｜ 纯 64 位（arm64-v8a）
+版本：**1.1.0（手绘改版，调试包 + 正式签名包）** ｜ versionCode **77** ｜ 数据库 **v9（SQLCipher + FTS5）** ｜ 纯 64 位（arm64-v8a）
 
 > 1.1.0 = 1.0.4 之后在 `beautify` 分支上做的一整套视觉重做，已合回 `main`。
-> 按约定只保留调试包；正式签名包没有重新构建。
+> 正式包用 `keystore/release.keystore`（RSA 4096）签名，包名 `com.synn.diary`，和调试包可共存。
 
 ## 产物
 
 | 文件 | 体积 | SHA-256 |
 |---|---|---|
+| `dist/日记-1.1.0-release.apk` | 17 MB | `eb934276afdb206ec187f998f2d4a64a5b9552d4f4a6fb308609789030de6e34` |
 | `dist/日记-1.1.0-debug.apk` | 22 MB | `962fbd5727142f4363d9cde5661735f623a0973cc62f86aade61fe37496724b7` |
 | `dist/日记-1.1.0-源码.zip` | 6.5 MB | `2d5734e91a3f93de1dc989801cd1ea9c2ff7523d12eea030462fb64e385dddbb` |
 
-包名 `com.synn.diary.debug`，`install -r` 覆盖安装保数据。
+调试包 `com.synn.diary.debug`，正式包 `com.synn.diary`；各自 `install -r` 覆盖安装保数据。
 
 ## 代码状态
 

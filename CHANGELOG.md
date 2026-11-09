@@ -587,3 +587,9 @@ APK 从 13 MB 涨到约 17 MB（字体占 3.4 MB）。
 
 - 删除死代码 `SaveIcon`，清理 40 多个废弃 import
 - 日历「今天」不再被 `remember` 冻结在跨午夜
+
+### 1.1.0 正式版（正式签名构建）
+
+- 用 `keystore/release.keystore`（RSA 4096）构建 `com.synn.diary` v1.1.0（versionCode 77）
+- 体积 17 MB，签名证书 SHA-256 `93:D2:B5:…:99:9C`，与 1.0.4 正式版同 key，可覆盖升级
+- 调试包与正式包数据独立；迁移数据走「恢复码 + 导出备份」
