@@ -119,7 +119,6 @@ import com.synn.diary.ui.components.RuledLinesIcon
 import com.synn.diary.ui.components.SaveIcon
 import com.synn.diary.ui.components.TextFieldsIcon
 import com.synn.diary.ui.mood.Mood
-import com.synn.diary.ui.mood.MoodIcon
 import com.synn.diary.util.Dates
 import kotlinx.coroutines.delay
 
@@ -739,7 +738,7 @@ private fun MoodRow(selected: String?, onSelect: (String) -> Unit) {
                     .clickable { onSelect(mood.emoji) },
                 contentAlignment = Alignment.Center,
             ) {
-                MoodIcon(mood = mood, size = 26.dp)
+                Text(text = mood.emoji, fontSize = 18.sp)
             }
         }
     }

@@ -69,7 +69,6 @@ import com.synn.diary.ui.components.SwipeAction
 import com.synn.diary.ui.components.SwipeActionsContainer
 import com.synn.diary.ui.lock.UnlockEntryDialog
 import com.synn.diary.ui.mood.Mood
-import com.synn.diary.ui.mood.MoodIcon
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -527,7 +526,7 @@ private fun FilterBar(
                     .clickable { onToggleMood(mood.emoji) },
                 contentAlignment = Alignment.Center,
             ) {
-                MoodIcon(mood = mood, size = 20.dp)
+                Text(text = mood.emoji, fontSize = 17.sp)
             }
         }
     }

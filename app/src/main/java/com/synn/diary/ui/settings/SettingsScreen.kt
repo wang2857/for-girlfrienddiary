@@ -18,9 +18,6 @@ import com.synn.diary.notify.ReminderScheduler
 import com.synn.diary.ui.lock.RecoveryCodeDialog
 import com.synn.diary.ui.lock.VerifyPinDialog
 import com.synn.diary.util.CrashLog
-import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -227,59 +224,6 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-            }
-
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = "心情图标",
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 12.dp),
-            )
-            Text(
-                text = "选一套更顺眼的；emoji 之外都是手绘的",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                com.synn.diary.ui.mood.MoodStyle.entries.forEach { style ->
-                    val selected = com.synn.diary.ui.mood.MoodStyle.from(
-                        container.appearanceSettings.moodStyle,
-                    ) == style
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(
-                                if (selected) MaterialTheme.colorScheme.primaryContainer
-                                else MaterialTheme.colorScheme.surfaceVariant,
-                            )
-                            .clickable { container.appearanceSettings.setMoodStyleId(style.id) }
-                            .padding(vertical = 8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                            listOf(
-                                com.synn.diary.ui.mood.Mood.HAPPY,
-                                com.synn.diary.ui.mood.Mood.CALM,
-                                com.synn.diary.ui.mood.Mood.SAD,
-                            ).forEach { preview ->
-                                androidx.compose.runtime.CompositionLocalProvider(
-                                    com.synn.diary.ui.mood.LocalMoodStyle provides style,
-                                ) {
-                                    com.synn.diary.ui.mood.MoodIcon(mood = preview, size = 16.dp)
-                                }
-                            }
-                        }
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = style.label,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
             }
 
             Spacer(Modifier.height(8.dp))

@@ -20,15 +20,6 @@ class AppearanceSettings(context: Context) {
     var dynamicColor: Boolean by mutableStateOf(prefs.getBoolean(KEY_DYNAMIC_COLOR, true))
         private set
 
-    /** 心情图标风格：emoji / face / cat / bean。 */
-    var moodStyle: String by mutableStateOf(prefs.getString(KEY_MOOD_STYLE, "emoji")!!)
-        private set
-
-    fun setMoodStyleId(value: String) {
-        moodStyle = value
-        prefs.edit { putString(KEY_MOOD_STYLE, value) }
-    }
-
     fun setDynamicColorEnabled(value: Boolean) {
         dynamicColor = value
         prefs.edit { putBoolean(KEY_DYNAMIC_COLOR, value) }
@@ -36,6 +27,5 @@ class AppearanceSettings(context: Context) {
 
     private companion object {
         const val KEY_DYNAMIC_COLOR = "dynamic_color"
-        const val KEY_MOOD_STYLE = "mood_style"
     }
 }
