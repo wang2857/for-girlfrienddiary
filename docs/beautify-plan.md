@@ -17,7 +17,7 @@
 - [x] 正文默认字号/行高给一个更"耐读"的组合 → 17sp / 30sp
 - [x] 年 18sp / 月 15sp / 周 12sp，字重依次递减
 - [x] 中文断行 `LineBreak.Paragraph`（标点不掉行首）
-- [ ] 数字用 tabular figures（`FontFeatureSetting("tnum")`），时间列表对齐更整齐
+- [x] 卡片日期和编辑器日期行都用 `tnum` 等宽数字
 
 ### 2. 时间线
 

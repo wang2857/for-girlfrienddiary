@@ -426,7 +426,10 @@ fun EditorScreen(
             if (candidates.isNotEmpty()) {
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                     val available = constraints.maxWidth
-                    val headerStyle = MaterialTheme.typography.labelSmall
+                    // 等宽数字：日期/时间里的 1 和 8 占同样宽度，多篇日记看起来不跳
+                    val headerStyle = MaterialTheme.typography.labelSmall.copy(
+                        fontFeatureSettings = "tnum",
+                    )
                     val measurer = rememberTextMeasurer()
                     // 允许折成两行：农历、天气、地点都尽量保留，别为了单行硬砍信息
                     val chosen = remember(candidates, available) {
