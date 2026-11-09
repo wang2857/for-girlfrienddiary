@@ -34,6 +34,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
@@ -445,6 +454,20 @@ fun EditorScreen(
                 }
             }
 
+            // 日期行下的发丝线：页眉和正文之间一条安静的分界
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 2.dp, bottom = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(width = 44.dp, height = 0.6.dp)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.28f)),
+                )
+            }
+
             MoodRow(selected = state.mood, onSelect = viewModel::toggleMood)
 
             TagRow(
@@ -575,17 +598,39 @@ fun EditorScreen(
             onDismissRequest = {},
             properties = PopupProperties(focusable = false),
         ) {
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = MaterialTheme.colorScheme.inverseSurface,
-                shadowElevation = 6.dp,
+            // 出现时从 0.85 弹到 1，走一点点 spring；消失就直接淡出
+            val visible = remember { MutableTransitionState(false).apply { targetState = true } }
+            AnimatedVisibility(
+                visibleState = visible,
+                enter = fadeIn(tween(130)) + scaleIn(
+                    initialScale = 0.85f,
+                    animationSpec = spring(dampingRatio = 0.55f, stiffness = 600f),
+                ),
+                exit = fadeOut(tween(120)) + scaleOut(targetScale = 0.92f, animationSpec = tween(120)),
             ) {
-                Text(
-                    text = "✓ 已收好",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.inverseOnSurface,
-                    modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp),
-                )
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.inverseSurface,
+                    shadowElevation = 6.dp,
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 11.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp),
+                            tint = MaterialTheme.colorScheme.inverseOnSurface,
+                        )
+                        Spacer(Modifier.width(7.dp))
+                        Text(
+                            text = "已收好",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.inverseOnSurface,
+                        )
+                    }
+                }
             }
         }
     }
