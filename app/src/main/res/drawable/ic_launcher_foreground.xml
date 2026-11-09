@@ -1,20 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 一页纸：底色墨绿，纸是米白，三条横线是写下的字。 -->
+<!-- 手绘小本子：奶白书页 + 粉色封面 + 蓝书带 + 爱心贴纸。 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- 纸张 -->
-    <path
-        android:fillColor="#FBF6EC"
-        android:pathData="M38,26h28a4,4 0 0 1 4,4v48a4,4 0 0 1 -4,4h-28a4,4 0 0 1 -4,-4v-48a4,4 0 0 1 4,-4z" />
-    <!-- 折角 -->
-    <path
-        android:fillColor="#E6DCCB"
-        android:pathData="M62,26 L70,34 L62,34 Z" />
-    <!-- 三条线 -->
-    <path
-        android:fillColor="#35544A"
-        android:pathData="M42,44h20v3h-20zM42,54h20v3h-20zM42,64h12v3h-12z" />
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="1.08"
+        android:scaleY="1.08">
+    <path android:fillColor="#FFFFFF" android:pathData="M41.00 25.00 H71.00 A7.00 7.00 0 0 1 78.00 32.00 V76.00 A7.00 7.00 0 0 1 71.00 83.00 H41.00 A7.00 7.00 0 0 1 34.00 76.00 V32.00 A7.00 7.00 0 0 1 41.00 25.00 Z" />
+    <path android:fillColor="#E8DFD0" android:pathData="M48.00 33.00 H73.00 A5.00 5.00 0 0 1 78.00 38.00 V78.00 A5.00 5.00 0 0 1 73.00 83.00 H48.00 A5.00 5.00 0 0 1 43.00 78.00 V38.00 A5.00 5.00 0 0 1 48.00 33.00 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M48.00 31.00 H72.00 A6.00 6.00 0 0 1 78.00 37.00 V75.00 A6.00 6.00 0 0 1 72.00 81.00 H48.00 A6.00 6.00 0 0 1 42.00 75.00 V37.00 A6.00 6.00 0 0 1 48.00 31.00 Z" />
+    <path android:fillColor="#F5A9C0" android:pathData="M34.00 21.00 H62.00 A9.00 9.00 0 0 1 71.00 30.00 V76.00 A9.00 9.00 0 0 1 62.00 85.00 H34.00 A9.00 9.00 0 0 1 25.00 76.00 V30.00 A9.00 9.00 0 0 1 34.00 21.00 Z" />
+    <path android:fillColor="#E58CA8" android:pathData="M34.00 21.00 H26.00 A9.00 9.00 0 0 1 35.00 30.00 V76.00 A9.00 9.00 0 0 1 26.00 85.00 H34.00 A9.00 9.00 0 0 1 25.00 76.00 V30.00 A9.00 9.00 0 0 1 34.00 21.00 Z" />
+    <path android:fillColor="#9FC5F2" android:pathData="M29.50 60.00 H66.50 A4.50 4.50 0 0 1 71.00 64.50 V64.50 A4.50 4.50 0 0 1 66.50 69.00 H29.50 A4.50 4.50 0 0 1 25.00 64.50 V64.50 A4.50 4.50 0 0 1 29.50 60.00 Z" />
+    <path android:fillColor="#7C97EE" android:pathData="M29.50 60.00 H38.50 A4.50 4.50 0 0 1 43.00 64.50 V64.50 A4.50 4.50 0 0 1 38.50 69.00 H29.50 A4.50 4.50 0 0 1 25.00 64.50 V64.50 A4.50 4.50 0 0 1 29.50 60.00 Z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.9" android:pathData="M64.00 39.60 C57.80 34.20 59.60 29.00 62.30 29.80 C63.50 30.20 64.00 31.40 64.00 32.60 C64.00 31.40 64.50 30.20 65.70 29.80 C68.40 29.00 70.20 34.20 64.00 39.60 Z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.35" android:pathData="M32.00 25.00 H38.00 A3.00 3.00 0 0 1 41.00 28.00 V28.00 A3.00 3.00 0 0 1 38.00 31.00 H32.00 A3.00 3.00 0 0 1 29.00 28.00 V28.00 A3.00 3.00 0 0 1 32.00 25.00 Z" />
+    </group>
 </vector>
