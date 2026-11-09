@@ -2,7 +2,10 @@ package com.synn.diary.ui.editor
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import android.graphics.BitmapFactory
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -15,7 +18,10 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import com.synn.diary.ui.LocalBackgroundFiles
+import java.io.File
 import kotlin.math.cos
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.math.sin
 
 /**
@@ -34,6 +40,14 @@ fun PaperBackdrop(
     Box(modifier) {
         when (background) {
             is EntryBackground.Custom -> {
+                // 蒙版浓度按照片本身的亮度来：亮的照片少盖一点，暗的多盖一点，
+                // 比固定 76%/82% 更稳——深色照片不会把字吃掉，亮照片也不会糊成一片灰。
+                val backgroundFile = LocalBackgroundFiles.current(background.fileName)
+                val imageLuminance by produceState<Float?>(null, background.fileName) {
+                    value = withContext(Dispatchers.IO) {
+                        runCatching { averageLuminance(backgroundFile) }.getOrNull()
+                    }
+                }
                 AsyncImage(
                     model = LocalBackgroundFiles.current(background.fileName),
                     contentDescription = null,
@@ -41,13 +55,23 @@ fun PaperBackdrop(
                     modifier = Modifier.matchParentSize(),
                 )
                 // 蒙版：让照片退到背景，文字仍然清楚
+                val surfaceLum = MaterialTheme.colorScheme.surface.luminance()
+                val maskAlpha = imageLuminance?.let { lum ->
+                    if (dark) {
+                        // 深色模式：把照片压到 ~10% 亮度，浅色字才够对比
+                        ((lum - 0.10f) / (lum - surfaceLum).coerceAtLeast(0.01f))
+                            .coerceIn(0.45f, 0.90f)
+                    } else {
+                        // 浅色模式：抬到 ~72% 亮度就够深色字读了，再多就把照片盖没了
+                        ((0.72f - lum) / (surfaceLum - lum).coerceAtLeast(0.01f))
+                            .coerceIn(0.55f, 0.85f)
+                    }
+                } ?: if (dark) 0.82f else 0.76f
                 Box(
                     modifier = Modifier
                         .matchParentSize()
                         .background(
-                            MaterialTheme.colorScheme.surface.copy(
-                                alpha = if (dark) 0.82f else 0.76f,
-                            ),
+                            MaterialTheme.colorScheme.surface.copy(alpha = maskAlpha),
                         ),
                 )
             }
@@ -168,4 +192,29 @@ private fun starPath(center: Offset, s: Float): Path {
     }
     path.close()
     return path
+}
+
+
+/** 缩到 32×32 取平均相对亮度；算不出来就返回 null，调用方会退回固定蒙版。 */
+private fun averageLuminance(file: File): Float? {
+    if (!file.exists()) return null
+    val options = BitmapFactory.Options().apply { inSampleSize = 16 }
+    val bitmap = BitmapFactory.decodeFile(file.path, options) ?: return null
+    return try {
+        var sum = 0f
+        var count = 0
+        for (y in 0 until bitmap.height step 2) {
+            for (x in 0 until bitmap.width step 2) {
+                val c = bitmap.getPixel(x, y)
+                val r = android.graphics.Color.red(c) / 255f
+                val g = android.graphics.Color.green(c) / 255f
+                val b = android.graphics.Color.blue(c) / 255f
+                sum += 0.2126f * r + 0.7152f * g + 0.0722f * b
+                count++
+            }
+        }
+        if (count == 0) null else sum / count
+    } finally {
+        bitmap.recycle()
+    }
 }
