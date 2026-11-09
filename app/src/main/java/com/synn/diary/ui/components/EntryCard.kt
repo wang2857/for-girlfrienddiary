@@ -53,7 +53,7 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(20.dp))
             .clickable(onClick = onClick),
         // 卡片底色跟着心情走：一眼扫下去能看出这段时间的情绪分布。
         // 深色模式下调高一点，否则心情色会被深底吃掉、看起来发灰。
@@ -74,6 +74,7 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.2.sp,
+                        fontFeatureSettings = "tnum",
                     ),
                     color = accent ?: MaterialTheme.colorScheme.onSurface,
                 )
@@ -87,8 +88,8 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = metaParts.joinToString(" · "),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.1.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
                         maxLines = 1,
                     )
                 }
@@ -138,7 +139,11 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
                     Spacer(Modifier.height(8.dp))
                     Text(
                         text = entry.title,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            lineHeight = 24.sp,
+                        ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -149,7 +154,7 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
                     Spacer(Modifier.height(6.dp))
                     Text(
                         text = preview,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
@@ -164,7 +169,7 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(150.dp)
-                            .clip(RoundedCornerShape(12.dp)),
+                            .clip(RoundedCornerShape(14.dp)),
                         contentScale = ContentScale.Crop,
                     )
                 }

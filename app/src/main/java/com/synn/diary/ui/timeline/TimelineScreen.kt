@@ -137,7 +137,8 @@ fun TimelineScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    // 卡片之间松一点，长列表更好扫
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     rows.forEach { row ->
                         when (row) {
