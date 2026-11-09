@@ -113,6 +113,8 @@ import com.synn.diary.data.PendingWrites
 import com.synn.diary.data.body.ImageAlign
 import com.synn.diary.data.db.TagEntity
 import com.synn.diary.ui.LocalImageFiles
+import com.synn.diary.ui.components.GlassDialogBlur
+import com.synn.diary.ui.components.LocalGlassEffect
 import com.synn.diary.ui.components.ImageIcon
 import com.synn.diary.ui.components.PaletteIcon
 import com.synn.diary.ui.components.RuledLinesIcon
@@ -942,6 +944,7 @@ private fun FontPickerDialog(
         onDismissRequest = onDismiss,
         title = { Text("正文字体") },
         text = {
+            GlassDialogBlur()
             Column(
                 modifier = Modifier
                     .heightIn(max = 460.dp)

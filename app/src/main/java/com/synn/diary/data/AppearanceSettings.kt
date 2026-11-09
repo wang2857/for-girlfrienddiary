@@ -20,6 +20,17 @@ class AppearanceSettings(context: Context) {
     var dynamicColor: Boolean by mutableStateOf(prefs.getBoolean(KEY_DYNAMIC_COLOR, true))
         private set
 
+    /** 液态玻璃：OriginOS 7 默认开，其它系统默认关（只能做到近似效果）。 */
+    var glassEffect: Boolean by mutableStateOf(
+        prefs.getBoolean(KEY_GLASS, com.synn.diary.util.OsFlavor.supportsLiquidGlass),
+    )
+        private set
+
+    fun setGlassEffectEnabled(value: Boolean) {
+        glassEffect = value
+        prefs.edit { putBoolean(KEY_GLASS, value) }
+    }
+
     fun setDynamicColorEnabled(value: Boolean) {
         dynamicColor = value
         prefs.edit { putBoolean(KEY_DYNAMIC_COLOR, value) }
@@ -27,5 +38,6 @@ class AppearanceSettings(context: Context) {
 
     private companion object {
         const val KEY_DYNAMIC_COLOR = "dynamic_color"
+        const val KEY_GLASS = "glass_effect"
     }
 }

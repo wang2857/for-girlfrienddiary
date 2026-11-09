@@ -226,6 +226,17 @@ fun SettingsScreen(
                 )
             }
 
+            SettingSwitchRow(
+                title = "液态玻璃",
+                subtitle = if (com.synn.diary.util.OsFlavor.supportsLiquidGlass) {
+                    "OriginOS 7 材质：对话框背景模糊 + 半透明玻璃"
+                } else {
+                    "近似效果：对话框背景模糊 + 半透明玻璃（Android 12+）"
+                },
+                checked = container.appearanceSettings.glassEffect,
+                onCheckedChange = { container.appearanceSettings.setGlassEffectEnabled(it) },
+            )
+
             Spacer(Modifier.height(8.dp))
             Text(
                 text = "安全",

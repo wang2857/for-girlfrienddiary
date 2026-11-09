@@ -31,10 +31,8 @@ import androidx.compose.ui.unit.dp
 /** 顶部底部的两个 tab。没有用 M3 的 NavigationBar：它强制要图标，而这里只有文字更干净。 */
 @Composable
 fun DiaryBottomBar(currentRoute: String, onSelect: (String) -> Unit) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 2.dp,
-    ) {
+    val glass = LocalGlassEffect.current
+    val content: @Composable () -> Unit = {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -44,6 +42,22 @@ fun DiaryBottomBar(currentRoute: String, onSelect: (String) -> Unit) {
             TabItem("时间线", "timeline", currentRoute, onSelect, Modifier.weight(1f))
             TabItem("日历", "calendar", currentRoute, onSelect, Modifier.weight(1f))
             TabItem("设置", "settings", currentRoute, onSelect, Modifier.weight(1f))
+        }
+    }
+    if (glass) {
+        GlassSurface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp),
+            alpha = 0.72f,
+        ) {
+            content()
+        }
+    } else {
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            tonalElevation = 2.dp,
+        ) {
+            content()
         }
     }
 }

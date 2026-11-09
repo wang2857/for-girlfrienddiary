@@ -75,6 +75,10 @@ class MainActivity : FragmentActivity() {
                     }
                 }
 
+                androidx.compose.runtime.CompositionLocalProvider(
+                    com.synn.diary.ui.components.LocalGlassEffect provides
+                        container.appearanceSettings.glassEffect,
+                ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -97,6 +101,7 @@ class MainActivity : FragmentActivity() {
                     } else {
                         DiaryNavHost(container = container)
                     }
+                }
                 }
             }
         }
