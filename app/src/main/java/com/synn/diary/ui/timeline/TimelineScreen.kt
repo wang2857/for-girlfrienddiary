@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -163,7 +164,12 @@ fun TimelineScreen(
                                         title = "${row.year}年",
                                         count = row.count,
                                         expanded = row.expanded,
-                                        style = MaterialTheme.typography.titleMedium,
+                                        // 年：这一屏最大的标题，18sp 半粗
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            letterSpacing = 0.4.sp,
+                                        ),
                                         sticky = true,
                                         onClick = { viewModel.toggleGroup(row.key) },
                                     )
@@ -178,7 +184,12 @@ fun TimelineScreen(
                                         title = monthLabel(row.month),
                                         count = row.count,
                                         expanded = row.expanded,
-                                        style = MaterialTheme.typography.titleSmall,
+                                        // 月：15sp 中粗 + 主色，比年低一档
+                                        style = MaterialTheme.typography.titleSmall.copy(
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            letterSpacing = 0.8.sp,
+                                        ),
                                         color = MaterialTheme.colorScheme.primary,
                                         sticky = true,
                                         onClick = { viewModel.toggleGroup(row.key) },
@@ -401,7 +412,12 @@ private fun WeekHeader(
         )
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.4.sp),
+            // 周：12sp 中等字重，比月份更轻，只当分隔
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = 0.4.sp,
+            ),
             color = if (isCurrent) MaterialTheme.colorScheme.primary
             else MaterialTheme.colorScheme.onSurfaceVariant,
         )
