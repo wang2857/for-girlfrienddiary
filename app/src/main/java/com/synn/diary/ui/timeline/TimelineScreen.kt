@@ -72,6 +72,7 @@ import com.synn.diary.ui.mood.Mood
 import com.synn.diary.ui.components.DoodleChip
 import com.synn.diary.ui.components.DoodleTopBar
 import com.synn.diary.ui.components.doodleBorder
+import com.synn.diary.ui.components.DoodlePencilIcon
 import com.synn.diary.ui.components.DoodleSearchIcon
 import com.synn.diary.ui.components.DoodleStarIcon
 import com.synn.diary.ui.mood.MoodIcon
@@ -123,18 +124,27 @@ fun TimelineScreen(
         bottomBar = { DiaryBottomBar(currentRoute = "timeline", onSelect = onSelectTab) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onCreateEntry,
-                modifier = Modifier.doodleBorder(
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.55f),
-                    corner = 16.dp,
-                    width = 1.2.dp,
-                    seed = 7,
-                ),
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
+            // 手绘铅笔贴纸，替代原来的"写一笔"文字胶囊
+            Box(
+                modifier = Modifier
+                    .size(58.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.primary)
+                    .doodleBorder(
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
+                        corner = 50.dp,
+                        width = 1.4.dp,
+                        seed = 7,
+                    )
+                    .clickable(onClick = onCreateEntry),
+                contentAlignment = Alignment.Center,
             ) {
-                Text("写一笔")
+                Icon(
+                    imageVector = DoodlePencilIcon,
+                    contentDescription = "写一笔",
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(27.dp),
+                )
             }
         },
     ) { inner ->

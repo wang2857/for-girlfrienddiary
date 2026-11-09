@@ -133,3 +133,14 @@ val DoodleSaveIcon: ImageVector by lazy {
         "M9.4 15.2h4.8",
     )
 }
+
+/** 手绘铅笔：写一笔用。 */
+val DoodlePencilIcon: ImageVector by lazy {
+    lineIcon(
+        "DoodlePencil",
+        "M4.8 19.2l1.9-4.6 9.4-9.4a2.1 2.1 0 0 1 3 3l-9.4 9.4z",
+        "M6.7 14.6l3 3",
+        "M14.4 6.3l3.3 3.3",
+        "M4.8 19.2l-.6 1.8 1.8-.6",
+    )
+}
