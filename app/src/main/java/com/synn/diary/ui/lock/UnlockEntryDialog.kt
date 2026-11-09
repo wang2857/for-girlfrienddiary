@@ -13,12 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -36,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import com.synn.diary.ui.components.DoodleDialog
+import com.synn.diary.ui.components.DoodleTextButton
 
 private enum class UnlockMode { FINGERPRINT, PIN }
 
@@ -111,7 +111,7 @@ fun UnlockEntryDialog(
         }
     }
 
-    AlertDialog(
+    DoodleDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
@@ -184,11 +184,11 @@ fun UnlockEntryDialog(
         },
         confirmButton = {
             if (mode == UnlockMode.PIN) {
-                TextButton(onClick = { submit() }, enabled = pin.length == 4) { Text("解锁") }
+                DoodleTextButton(onClick = { submit() }, enabled = pin.length == 4) { Text("解锁") }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("取消") }
+            DoodleTextButton(onClick = onDismiss) { Text("取消") }
         },
     )
 }

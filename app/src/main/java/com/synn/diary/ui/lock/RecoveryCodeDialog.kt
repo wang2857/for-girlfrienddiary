@@ -7,10 +7,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -18,6 +16,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.synn.diary.ui.components.DoodleDialog
+import com.synn.diary.ui.components.DoodleTextButton
 import com.synn.diary.data.lock.RecoveryCode
 
 /**
@@ -33,7 +33,7 @@ fun RecoveryCodeDialog(
     again: Boolean = false,
     onReset: (() -> Unit)? = null,
 ) {
-    AlertDialog(
+    DoodleDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (again) "你的恢复码" else "抄下这串恢复码") },
         text = {
@@ -64,16 +64,16 @@ fun RecoveryCodeDialog(
                 Text(
                     text = "抄在纸上，或者记到这台手机以外的地方。丢了就只能清空数据重来。",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text(if (again) "关闭" else "我已抄好") }
+            DoodleTextButton(onClick = onDismiss) { Text(if (again) "关闭" else "我已抄好") }
         },
         dismissButton = {
             if (onReset != null) {
-                TextButton(onClick = onReset) { Text("重设一个") }
+                DoodleTextButton(onClick = onReset) { Text("重设一个") }
             }
         },
     )

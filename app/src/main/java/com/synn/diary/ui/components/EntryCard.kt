@@ -12,10 +12,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -35,7 +33,11 @@ import coil3.compose.AsyncImage
 import com.synn.diary.data.body.BodyMarkers
 import com.synn.diary.data.db.EntryWithTags
 import com.synn.diary.ui.LocalImageFiles
+import com.synn.diary.ui.components.DoodleLockIcon
+import com.synn.diary.ui.components.DoodleStarIcon
+import com.synn.diary.ui.components.doodleBorder
 import com.synn.diary.ui.mood.Mood
+import com.synn.diary.ui.mood.MoodIcon
 import com.synn.diary.util.Dates
 
 @Composable
@@ -47,23 +49,26 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
     // 按明暗往黑/白方向压一档，保留色相但保证能读。
     val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     val accent = mood?.let { m ->
-        lerp(m.color, if (dark) Color.White else Color.Black, if (dark) 0.25f else 0.3f)
+        // 底色心情色更浓了（浅 30% / 深 34%），日期文字跟着加深，保证 4.8:1 以上
+        lerp(m.color, if (dark) Color.White else Color.Black, if (dark) 0.45f else 0.65f)
     }
 
-    Card(
+    // 卡片底色跟着心情走；描边是手绘的，不用 Material 的 Card（它的边太"机"）
+    val cardColor = mood?.let { m ->
+        lerp(
+            MaterialTheme.colorScheme.surfaceVariant,
+            m.color,
+            if (dark) 0.34f else 0.30f,
+        )
+    } ?: MaterialTheme.colorScheme.surfaceVariant
+    val inkLine = MaterialTheme.colorScheme.onSurface.copy(alpha = if (dark) 0.30f else 0.24f)
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(20.dp))
+            .background(cardColor)
+            .doodleBorder(color = inkLine, corner = 20.dp, seed = entry.id.toInt())
             .clickable(onClick = onClick),
-        // 卡片底色跟着心情走：一眼扫下去能看出这段时间的情绪分布。
-        // 深色模式下调高一点，否则心情色会被深底吃掉、看起来发灰。
-        colors = if (mood != null) {
-            CardDefaults.cardColors(
-                containerColor = mood.color.copy(alpha = if (dark) 0.22f else 0.16f),
-            )
-        } else {
-            CardDefaults.cardColors()
-        },
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // —— 抬头：日期是主信息，其余附注降级成一行小字 ——
@@ -74,6 +79,7 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.2.sp,
+                        fontFeatureSettings = "tnum",
                     ),
                     color = accent ?: MaterialTheme.colorScheme.onSurface,
                 )
@@ -87,8 +93,8 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = metaParts.joinToString(" · "),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.1.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
                         maxLines = 1,
                     )
                 }
@@ -96,49 +102,57 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
                 Spacer(Modifier.weight(1f))
 
                 if (entry.favorite) {
-                    Text(
-                        text = "★",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = accent ?: MaterialTheme.colorScheme.primary,
+                    Icon(
+                        imageVector = DoodleStarIcon,
+                        contentDescription = "已收藏",
+                        modifier = Modifier.size(14.dp),
+                        tint = accent ?: MaterialTheme.colorScheme.primary,
                     )
                     Spacer(Modifier.width(4.dp))
                 }
                 if (entry.locked) {
-                    Text(text = "🔒", style = MaterialTheme.typography.labelSmall)
+                    Icon(
+                        imageVector = DoodleLockIcon,
+                        contentDescription = "已上锁",
+                        modifier = Modifier.size(13.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                     Spacer(Modifier.width(4.dp))
                 }
 
-                // 心情放在浅色圆底里：emoji 直接压在彩色卡片上会糊
-                entry.mood?.let { emoji ->
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .background(
-                                (mood?.color ?: Color.Transparent)
-                                    .copy(alpha = if (dark) 0.26f else 0.18f),
-                            ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(text = emoji, style = MaterialTheme.typography.bodyMedium)
-                    }
+                // 心情贴纸直接贴上去：自带白边，不再需要灰色圆底
+                mood?.let { current ->
+                    MoodIcon(mood = current, size = 27.dp)
                 }
             }
 
             if (entry.locked) {
                 // 上锁的日记在列表里只露时间，正文、图片、标签都不渲染
                 Spacer(Modifier.height(6.dp))
-                Text(
-                    text = "🔒 已上锁 · 解锁后查看",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.outline,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = DoodleLockIcon,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.outline,
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "已上锁 · 解锁后查看",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             } else {
                 if (entry.title.isNotBlank()) {
                     Spacer(Modifier.height(8.dp))
                     Text(
                         text = entry.title,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            lineHeight = 24.sp,
+                        ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -149,9 +163,9 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
                     Spacer(Modifier.height(6.dp))
                     Text(
                         text = preview,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 3,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
@@ -164,7 +178,7 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(150.dp)
-                            .clip(RoundedCornerShape(12.dp)),
+                            .clip(RoundedCornerShape(14.dp)),
                         contentScale = ContentScale.Crop,
                     )
                 }

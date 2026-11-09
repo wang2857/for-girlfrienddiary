@@ -3,7 +3,6 @@ package com.synn.diary.ui.timeline
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,27 +22,32 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.synn.diary.ui.components.DoodleDialog
+import com.synn.diary.ui.components.DoodleTextButton
 import com.synn.diary.ui.components.DiaryBottomBar
 import com.synn.diary.ui.components.EntryCard
 import androidx.compose.material3.AssistChip
@@ -59,6 +63,13 @@ import com.synn.diary.ui.components.SwipeAction
 import com.synn.diary.ui.components.SwipeActionsContainer
 import com.synn.diary.ui.lock.UnlockEntryDialog
 import com.synn.diary.ui.mood.Mood
+import com.synn.diary.ui.components.DoodleChip
+import com.synn.diary.ui.components.DoodleTopBar
+import com.synn.diary.ui.components.doodleBorder
+import com.synn.diary.ui.components.DoodlePencilIcon
+import com.synn.diary.ui.components.DoodleSearchIcon
+import com.synn.diary.ui.components.DoodleStarIcon
+import com.synn.diary.ui.mood.MoodIcon
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -91,17 +102,15 @@ fun TimelineScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "日记",
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
-                },
+            DoodleTopBar(
+                title = "日记",
                 actions = {
-                    // 用图标代替"搜索"两个字：顶栏少一半文字噪音
-                    TextButton(onClick = onOpenSearch) {
-                        Text(text = "🔍", fontSize = 17.sp)
+                    IconButton(onClick = onOpenSearch) {
+                        Icon(
+                            imageVector = DoodleSearchIcon,
+                            contentDescription = "搜索",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 },
             )
@@ -109,12 +118,30 @@ fun TimelineScreen(
         bottomBar = { DiaryBottomBar(currentRoute = "timeline", onSelect = onSelectTab) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onCreateEntry,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
+            // 手绘铅笔贴纸，替代原来的"写一笔"文字胶囊
+            Box(
+                modifier = Modifier
+                    .size(58.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.primary)
+                    .doodleBorder(
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
+                        corner = 50.dp,
+                        width = 1.4.dp,
+                        seed = 7,
+                    )
+                    .clickable(
+                        role = androidx.compose.ui.semantics.Role.Button,
+                        onClick = onCreateEntry,
+                    ),
+                contentAlignment = Alignment.Center,
             ) {
-                Text("写一笔")
+                Icon(
+                    imageVector = DoodlePencilIcon,
+                    contentDescription = "写一笔",
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(27.dp),
+                )
             }
         },
     ) { inner ->
@@ -137,7 +164,8 @@ fun TimelineScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    // 卡片之间松一点，长列表更好扫
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     rows.forEach { row ->
                         when (row) {
@@ -149,7 +177,12 @@ fun TimelineScreen(
                                         title = "${row.year}年",
                                         count = row.count,
                                         expanded = row.expanded,
-                                        style = MaterialTheme.typography.titleMedium,
+                                        // 年：这一屏最大的标题，18sp 半粗
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            letterSpacing = 0.4.sp,
+                                        ),
                                         sticky = true,
                                         onClick = { viewModel.toggleGroup(row.key) },
                                     )
@@ -164,7 +197,12 @@ fun TimelineScreen(
                                         title = monthLabel(row.month),
                                         count = row.count,
                                         expanded = row.expanded,
-                                        style = MaterialTheme.typography.titleSmall,
+                                        // 月：15sp 中粗 + 主色，比年低一档
+                                        style = MaterialTheme.typography.titleSmall.copy(
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            letterSpacing = 0.8.sp,
+                                        ),
                                         color = MaterialTheme.colorScheme.primary,
                                         sticky = true,
                                         onClick = { viewModel.toggleGroup(row.key) },
@@ -243,7 +281,7 @@ fun TimelineScreen(
     }
 
     if (showTagManager) {
-        AlertDialog(
+        DoodleDialog(
             onDismissRequest = { showTagManager = false },
             title = { Text("管理标签") },
             text = {
@@ -259,7 +297,7 @@ fun TimelineScreen(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(tag.name, modifier = Modifier.weight(1f))
-                            TextButton(onClick = { pendingTagDelete = tag.id to tag.name }) {
+                            DoodleTextButton(onClick = { pendingTagDelete = tag.id to tag.name }) {
                                 Text("删除", color = MaterialTheme.colorScheme.error)
                             }
                         }
@@ -267,24 +305,24 @@ fun TimelineScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showTagManager = false }) { Text("完成") }
+                DoodleTextButton(onClick = { showTagManager = false }) { Text("完成") }
             },
         )
     }
 
     pendingTagDelete?.let { (tagId, name) ->
-        AlertDialog(
+        DoodleDialog(
             onDismissRequest = { pendingTagDelete = null },
             title = { Text("删除标签「$name」？") },
             text = { Text("只删标签本身，日记内容不受影响。") },
             confirmButton = {
-                TextButton(onClick = {
+                DoodleTextButton(onClick = {
                     viewModel.deleteTag(tagId)
                     pendingTagDelete = null
                 }) { Text("删除") }
             },
             dismissButton = {
-                TextButton(onClick = { pendingTagDelete = null }) { Text("取消") }
+                DoodleTextButton(onClick = { pendingTagDelete = null }) { Text("取消") }
             },
         )
     }
@@ -317,7 +355,21 @@ private fun GroupHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (sticky) Modifier.background(MaterialTheme.colorScheme.background) else Modifier)
+            .then(
+                if (sticky) {
+                    // 贴顶时底部渐隐：内容从下面滑过去不再"硬切"一条边
+                    val bg = MaterialTheme.colorScheme.background
+                    Modifier.background(
+                        androidx.compose.ui.graphics.Brush.verticalGradient(
+                            0f to bg,
+                            0.7f to bg,
+                            1f to bg.copy(alpha = 0f),
+                        ),
+                    )
+                } else {
+                    Modifier
+                },
+            )
             .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 10.dp),
@@ -327,7 +379,7 @@ private fun GroupHeader(
         Text(
             text = "›",
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.outline,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
                 .width(16.dp)
                 .graphicsLayer { rotationZ = if (expanded) 90f else 0f },
@@ -342,7 +394,7 @@ private fun GroupHeader(
         Text(
             text = "$count 篇",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.7f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
         )
     }
 }
@@ -366,14 +418,19 @@ private fun WeekHeader(
         Text(
             text = "›",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.outline,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
                 .width(14.dp)
                 .graphicsLayer { rotationZ = if (expanded) 90f else 0f },
         )
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.4.sp),
+            // 周：12sp 中等字重，比月份更轻，只当分隔
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = 0.4.sp,
+            ),
             color = if (isCurrent) MaterialTheme.colorScheme.primary
             else MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -389,7 +446,7 @@ private fun WeekHeader(
         Text(
             text = "$count 篇",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.7f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
         )
     }
 }
@@ -413,27 +470,36 @@ private fun FilterBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         item(key = "all") {
-            FilterChip(
+            DoodleChip(
                 selected = selectedTag == null && selectedMood == null && !favoritesOnly,
                 onClick = onClear,
-                label = { Text("全部") },
-            )
+                seed = 1,
+            ) { Text("全部") }
         }
 
         item(key = "favorites") {
-            FilterChip(
+            DoodleChip(
                 selected = favoritesOnly,
                 onClick = onToggleFavorites,
-                label = { Text("★ 收藏") },
-            )
+                seed = 2,
+            ) {
+                Icon(
+                    imageVector = DoodleStarIcon,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(Modifier.width(4.dp))
+                Text("收藏")
+            }
         }
 
         items(tags, key = { "t${it.first}" }) { (id, name) ->
-            FilterChip(
+            DoodleChip(
                 selected = selectedTag == id,
                 onClick = { onSelectTag(if (selectedTag == id) null else id) },
-                label = { Text(name) },
-            )
+                seed = id.toInt(),
+            ) { Text(name) }
         }
 
         if (tags.isNotEmpty()) {
@@ -459,7 +525,7 @@ private fun FilterBar(
             val selected = selectedMood == mood.emoji
             Box(
                 modifier = Modifier
-                    .size(34.dp)
+                    .size(42.dp)
                     .clip(CircleShape)
                     .background(
                         if (selected) mood.color.copy(alpha = 0.3f)
@@ -468,10 +534,13 @@ private fun FilterBar(
                     .then(
                         if (selected) Modifier.border(1.5.dp, mood.color, CircleShape) else Modifier,
                     )
-                    .clickable { onToggleMood(mood.emoji) },
+                    .clickable(role = androidx.compose.ui.semantics.Role.Button) {
+                        onToggleMood(mood.emoji)
+                    }
+                    .semantics { contentDescription = mood.label },
                 contentAlignment = Alignment.Center,
             ) {
-                Text(text = mood.emoji, fontSize = 17.sp)
+                MoodIcon(mood = mood, size = 24.dp)
             }
         }
     }
@@ -496,11 +565,17 @@ private fun EmptyTimeline(filtering: Boolean) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(
-            text = if (filtering) "🌿" else "🌱",
-            style = MaterialTheme.typography.displaySmall,
-        )
-        Spacer(Modifier.height(18.dp))
+        if (filtering) {
+            Icon(
+                imageVector = DoodleSearchIcon,
+                contentDescription = null,
+                modifier = Modifier.size(38.dp),
+                tint = MaterialTheme.colorScheme.outline,
+            )
+        } else {
+            PaperSheet()
+        }
+        Spacer(Modifier.height(26.dp))
         Text(
             text = if (filtering) "这些条件下还没有记录" else "$greeting，今天还没写呢",
             style = MaterialTheme.typography.titleMedium,
@@ -510,10 +585,41 @@ private fun EmptyTimeline(filtering: Boolean) {
         Text(
             text = if (filtering) "点「全部」回到所有记录。" else "哪怕一句话也算。",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.outline,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
     }
+}
+
+/** 空状态的一张"空白纸"：几行手划的线，比一个 emoji 更说明这是本子。 */
+@Composable
+private fun PaperSheet() {
+    val shape = RoundedCornerShape(16.dp)
+    val ink = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)
+    val dot = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+    Box(
+        modifier = Modifier
+            .size(width = 128.dp, height = 164.dp)
+            .graphicsLayer { rotationZ = -3f }
+            .shadow(10.dp, shape)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .drawBehind {
+                val startX = 22.dp.toPx()
+                val step = 26.dp.toPx()
+                val endY = size.height - 18.dp.toPx()
+                var y = 54.dp.toPx()
+                var index = 0
+                while (y < endY) {
+                    val endX = if (index == 3) size.width * 0.55f else size.width - 22.dp.toPx()
+                    drawLine(ink, Offset(startX, y), Offset(endX, y), 1.4.dp.toPx())
+                    y += step
+                    index++
+                }
+                // 右上角一个小圆点，像页码
+                drawCircle(dot, radius = 4.dp.toPx(), center = Offset(size.width - 26.dp.toPx(), 24.dp.toPx()))
+            },
+    )
 }
 
 /** 11 → 十一月：跟农历的"九月"呼应，比 "11月" 更像日记本。 */

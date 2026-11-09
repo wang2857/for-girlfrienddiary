@@ -10,6 +10,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import android.widget.Toast
+import com.synn.diary.ui.components.DoodleSectionTitle
+import com.synn.diary.ui.components.DoodleDialog
+import com.synn.diary.ui.components.DoodleTextButton
+import com.synn.diary.ui.components.DoodleSwitch
+import com.synn.diary.ui.components.DoodleTopBar
 import com.synn.diary.data.AppContainer
 import com.synn.diary.data.backup.AutoBackup
 import com.synn.diary.data.backup.AutoBackupScheduler
@@ -18,27 +23,27 @@ import com.synn.diary.notify.ReminderScheduler
 import com.synn.diary.ui.lock.RecoveryCodeDialog
 import com.synn.diary.ui.lock.VerifyPinDialog
 import com.synn.diary.util.CrashLog
+import androidx.compose.foundation.layout.Box
+import com.synn.diary.ui.components.doodleBorder
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,6 +53,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
@@ -191,7 +198,7 @@ fun SettingsScreen(
     val canBiometric = remember { biometricAvailable(context) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("设置") }) },
+        topBar = { DoodleTopBar("设置") },
         bottomBar = { DiaryBottomBar(currentRoute = "settings", onSelect = onSelectTab) },
     ) { inner ->
         Column(
@@ -203,11 +210,139 @@ fun SettingsScreen(
                 .padding(horizontal = 20.dp),
         ) {
             Spacer(Modifier.height(8.dp))
+            DoodleSectionTitle("外观")
+            Spacer(Modifier.height(4.dp))
+
+            // 只有 Android 12+ 才有 Material You 取色；更老的系统没这个选项
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                SettingSwitchRow(
+                    title = "跟随系统取色",
+                    subtitle = "用壁纸配色；关掉就用纸感米白 + 墨绿",
+                    checked = container.appearanceSettings.dynamicColor,
+                    onCheckedChange = { container.appearanceSettings.setDynamicColorEnabled(it) },
+                )
+            } else {
+                Text(
+                    text = "纸感配色（Android 12 起可以跟随壁纸取色）",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Spacer(Modifier.height(2.dp))
             Text(
-                text = "安全",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
+                text = "深浅色",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(top = 12.dp),
             )
+            Text(
+                text = "跟随手机，或者固定一种",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    "system" to "跟随系统",
+                    "light" to "浅色",
+                    "dark" to "深色",
+                ).forEach { (id, label) ->
+                    val selected = container.appearanceSettings.themeMode == id
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(50))
+                            .background(
+                                if (selected) MaterialTheme.colorScheme.primaryContainer
+                                else Color.Transparent,
+                            )
+                            .doodleBorder(
+                                color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f),
+                                corner = 50.dp,
+                                width = 1.2.dp,
+                                seed = label.length,
+                            )
+                            .clickable { container.appearanceSettings.setThemeModeId(id) }
+                            .padding(vertical = 9.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = "心情图标",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(top = 12.dp),
+            )
+            Text(
+                text = "四套画法，选顺眼的那套",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                com.synn.diary.ui.mood.MoodStyle.entries.forEach { style ->
+                    val selected = com.synn.diary.ui.mood.MoodStyle.from(
+                        container.appearanceSettings.moodStyle,
+                    ) == style
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(
+                                if (selected) MaterialTheme.colorScheme.primaryContainer
+                                else MaterialTheme.colorScheme.surfaceVariant,
+                            )
+                            .clickable { container.appearanceSettings.setMoodStyleId(style.id) }
+                            .padding(vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(1.dp)) {
+                            listOf(
+                                com.synn.diary.ui.mood.Mood.HAPPY,
+                                com.synn.diary.ui.mood.Mood.CALM,
+                                com.synn.diary.ui.mood.Mood.SAD,
+                            ).forEach { preview ->
+                                com.synn.diary.ui.mood.MoodIcon(
+                                    mood = preview,
+                                    size = 15.dp,
+                                    style = style,
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = style.label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
+            SettingSwitchRow(
+                title = "液态玻璃",
+                subtitle = if (com.synn.diary.util.OsFlavor.supportsLiquidGlass) {
+                    "OriginOS 7 材质：对话框背景模糊 + 半透明玻璃"
+                } else {
+                    "近似效果：对话框背景模糊 + 半透明玻璃（Android 12+）"
+                },
+                checked = container.appearanceSettings.glassEffect,
+                onCheckedChange = { container.appearanceSettings.setGlassEffectEnabled(it) },
+            )
+
+            Spacer(Modifier.height(8.dp))
+            DoodleSectionTitle("安全")
             Spacer(Modifier.height(4.dp))
 
             SettingSwitchRow(
@@ -274,11 +409,7 @@ fun SettingsScreen(
             }
 
             Spacer(Modifier.height(20.dp))
-            Text(
-                text = "提醒",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            DoodleSectionTitle("提醒")
             Spacer(Modifier.height(4.dp))
             SettingSwitchRow(
                 title = "每日提醒",
@@ -321,11 +452,7 @@ fun SettingsScreen(
             }
 
             Spacer(Modifier.height(20.dp))
-            Text(
-                text = "数据",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            DoodleSectionTitle("数据")
             Spacer(Modifier.height(4.dp))
             SettingActionRow(
                 title = "回收站",
@@ -399,11 +526,7 @@ fun SettingsScreen(
             )
 
             Spacer(Modifier.height(24.dp))
-            Text(
-                text = "关于",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            DoodleSectionTitle("关于")
             Spacer(Modifier.height(8.dp))
             Text(
                 text = "日记 ${appVersion(context)} · 本地存储 · 不上传",
@@ -448,7 +571,7 @@ fun SettingsScreen(
     }
 
     pending?.let { uri ->
-        AlertDialog(
+        DoodleDialog(
             onDismissRequest = onClearPendingImport,
             title = { Text(if (needsRecoveryCode) "从别的设备恢复？" else "用备份覆盖本机数据？") },
             text = {
@@ -474,7 +597,7 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {
-                TextButton(
+                DoodleTextButton(
                     enabled = !needsRecoveryCode || recoveryInput.isNotBlank(),
                     onClick = {
                         onClearPendingImport()
@@ -486,18 +609,18 @@ fun SettingsScreen(
                 ) { Text(if (needsRecoveryCode) "解密并恢复" else "覆盖导入") }
             },
             dismissButton = {
-                TextButton(onClick = onClearPendingImport) { Text("取消") }
+                DoodleTextButton(onClick = onClearPendingImport) { Text("取消") }
             },
         )
     }
 
     if (showResetRecovery) {
-        AlertDialog(
+        DoodleDialog(
             onDismissRequest = { showResetRecovery = false },
             title = { Text("重设恢复码？") },
             text = { Text("旧的恢复码会立刻作废。如果之前那份还留着，记得划掉。") },
             confirmButton = {
-                TextButton(
+                DoodleTextButton(
                     onClick = {
                         showResetRecovery = false
                         recoveryAgain = false
@@ -508,7 +631,7 @@ fun SettingsScreen(
                 ) { Text("重设") }
             },
             dismissButton = {
-                TextButton(onClick = { showResetRecovery = false }) { Text("取消") }
+                DoodleTextButton(onClick = { showResetRecovery = false }) { Text("取消") }
             },
         )
     }
@@ -532,7 +655,7 @@ fun SettingsScreen(
     }
 
     pendingMerge?.let { uri ->
-        AlertDialog(
+        DoodleDialog(
             onDismissRequest = { pendingMerge = null },
             title = { Text("从别的设备合并？") },
             text = {
@@ -549,7 +672,7 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {
-                TextButton(
+                DoodleTextButton(
                     enabled = mergeCode.isNotBlank(),
                     onClick = {
                         val target = uri
@@ -560,7 +683,7 @@ fun SettingsScreen(
                     },
                 ) { Text("合并") }
             },
-            dismissButton = { TextButton(onClick = { pendingMerge = null }) { Text("取消") } },
+            dismissButton = { DoodleTextButton(onClick = { pendingMerge = null }) { Text("取消") } },
         )
     }
 
@@ -596,12 +719,12 @@ fun SettingsScreen(
     }
 
     if (showDisableConfirm) {
-        AlertDialog(
+        DoodleDialog(
             onDismissRequest = { showDisableConfirm = false },
             title = { Text("关闭应用锁？") },
             text = { Text("关闭后打开应用不再需要密码，截屏保护一并取消；已上锁的日记也会全部解锁——没有密码就没法再验证它们。") },
             confirmButton = {
-                TextButton(
+                DoodleTextButton(
                     onClick = {
                         onDisableLock()
                         biometric = false
@@ -610,7 +733,7 @@ fun SettingsScreen(
                 ) { Text("关闭") }
             },
             dismissButton = {
-                TextButton(onClick = { showDisableConfirm = false }) { Text("取消") }
+                DoodleTextButton(onClick = { showDisableConfirm = false }) { Text("取消") }
             },
         )
     }
@@ -635,10 +758,10 @@ private fun SettingSwitchRow(
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Switch(
+        DoodleSwitch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             enabled = enabled,
@@ -666,10 +789,10 @@ private fun SettingActionRow(
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        TextButton(onClick = onClick) { Text(actionLabel) }
+        DoodleTextButton(onClick = onClick) { Text(actionLabel) }
     }
 }
 
@@ -677,7 +800,7 @@ private fun SettingActionRow(
 private fun PinDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
     var pin by remember { mutableStateOf("") }
 
-    AlertDialog(
+    DoodleDialog(
         onDismissRequest = onDismiss,
         title = { Text("设置 4 位密码") },
         text = {
@@ -692,12 +815,12 @@ private fun PinDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
             )
         },
         confirmButton = {
-            TextButton(
+            DoodleTextButton(
                 onClick = { onConfirm(pin) },
                 enabled = pin.length == 4,
             ) { Text("保存") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+        dismissButton = { DoodleTextButton(onClick = onDismiss) { Text("取消") } },
     )
 }
 
@@ -708,7 +831,7 @@ private fun CrashLogDialog(
     onClear: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
+    DoodleDialog(
         onDismissRequest = onDismiss,
         title = { Text("崩溃日志") },
         text = {
@@ -724,11 +847,11 @@ private fun CrashLogDialog(
                 )
             }
         },
-        confirmButton = { TextButton(onClick = onCopy) { Text("复制") } },
+        confirmButton = { DoodleTextButton(onClick = onCopy) { Text("复制") } },
         dismissButton = {
             Row {
-                TextButton(onClick = onClear) { Text("清空") }
-                TextButton(onClick = onDismiss) { Text("关闭") }
+                DoodleTextButton(onClick = onClear) { Text("清空") }
+                DoodleTextButton(onClick = onDismiss) { Text("关闭") }
             }
         },
     )

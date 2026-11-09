@@ -50,12 +50,29 @@ class MainActivity : FragmentActivity() {
         installPrivacyCover()
 
         setContent {
-            DiaryTheme {
+            // 深浅色：跟随系统 / 强制浅 / 强制深
+            val darkTheme = when (container.appearanceSettings.themeMode) {
+                "light" -> false
+                "dark" -> true
+                else -> androidx.compose.foundation.isSystemInDarkTheme()
+            }
+            // 读 mutableState：设置里一关"跟随系统取色"，这里立刻重组
+            DiaryTheme(
+                darkTheme = darkTheme,
+                dynamicColor = container.appearanceSettings.dynamicColor,
+            ) {
                 val locked by container.lockManager.locked.collectAsStateWithLifecycle()
                 val lockEnabled by container.lockManager.enabled.collectAsStateWithLifecycle()
                 val allowScreenshots by container.lockManager.allowScreenshots.collectAsStateWithLifecycle()
                 // 首次安装先走引导（设密码），走完才进主界面
                 var onboarded by remember { mutableStateOf(com.synn.diary.data.Onboarding.isDone(this@MainActivity)) }
+
+                // 深浅色切换时，状态栏/导航栏图标的明暗也要跟着翻；enableEdgeToEdge 只在启动时定一次
+                LaunchedEffect(darkTheme) {
+                    val controller = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+                    controller.isAppearanceLightStatusBars = !darkTheme
+                    controller.isAppearanceLightNavigationBars = !darkTheme
+                }
 
                 // 开关一改立刻生效，不用等下次回到前台
                 LaunchedEffect(lockEnabled, allowScreenshots) {
@@ -66,6 +83,14 @@ class MainActivity : FragmentActivity() {
                     }
                 }
 
+                androidx.compose.runtime.CompositionLocalProvider(
+                    com.synn.diary.ui.components.LocalGlassEffect provides
+                        container.appearanceSettings.glassEffect,
+                    com.synn.diary.ui.mood.LocalMoodStyle provides
+                        com.synn.diary.ui.mood.MoodStyle.from(
+                            container.appearanceSettings.moodStyle,
+                        ),
+                ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -88,6 +113,7 @@ class MainActivity : FragmentActivity() {
                     } else {
                         DiaryNavHost(container = container)
                     }
+                }
                 }
             }
         }

@@ -6,6 +6,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import com.synn.diary.ui.components.doodleBorder
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,11 +34,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -53,8 +58,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.layout.BoxScope
+import com.synn.diary.ui.components.DoodleDialog
+import com.synn.diary.ui.components.DoodleTextButton
 import com.synn.diary.ui.LocalBackgroundFiles
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -103,8 +109,18 @@ import com.synn.diary.data.PendingWrites
 import com.synn.diary.data.body.ImageAlign
 import com.synn.diary.data.db.TagEntity
 import com.synn.diary.ui.LocalImageFiles
-import com.synn.diary.ui.components.SaveIcon
+import com.synn.diary.ui.components.DoodleCheckIcon
+import com.synn.diary.ui.components.doodleDivider
+import com.synn.diary.ui.components.DoodleBackIcon
+import com.synn.diary.ui.components.GlassDialogBlur
+import com.synn.diary.ui.components.DoodleImageIcon
+import com.synn.diary.ui.components.DoodlePaletteIcon
+import com.synn.diary.ui.components.DoodleLinesIcon
+import com.synn.diary.ui.components.DoodleTrashIcon
+import com.synn.diary.ui.components.DoodleSaveIcon
+import com.synn.diary.ui.components.DoodleTextIcon
 import com.synn.diary.ui.mood.Mood
+import com.synn.diary.ui.mood.MoodIcon
 import com.synn.diary.util.Dates
 import kotlinx.coroutines.delay
 
@@ -258,7 +274,7 @@ fun EditorScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = DoodleBackIcon,
                             contentDescription = "返回",
                         )
                     }
@@ -279,7 +295,7 @@ fun EditorScreen(
                         },
                     ) {
                         Icon(
-                            imageVector = SaveIcon,
+                            imageVector = DoodleSaveIcon,
                             contentDescription = "保存",
                         )
                     }
@@ -412,7 +428,10 @@ fun EditorScreen(
             if (candidates.isNotEmpty()) {
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                     val available = constraints.maxWidth
-                    val headerStyle = MaterialTheme.typography.labelSmall
+                    // 等宽数字：日期/时间里的 1 和 8 占同样宽度，多篇日记看起来不跳
+                    val headerStyle = MaterialTheme.typography.labelSmall.copy(
+                        fontFeatureSettings = "tnum",
+                    )
                     val measurer = rememberTextMeasurer()
                     // 允许折成两行：农历、天气、地点都尽量保留，别为了单行硬砍信息
                     val chosen = remember(candidates, available) {
@@ -440,6 +459,20 @@ fun EditorScreen(
                 }
             }
 
+            // 日期行下的发丝线：页眉和正文之间一条安静的分界
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 2.dp, bottom = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(width = 44.dp, height = 0.6.dp)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.28f)),
+                )
+            }
+
             MoodRow(selected = state.mood, onSelect = viewModel::toggleMood)
 
             TagRow(
@@ -463,16 +496,22 @@ fun EditorScreen(
                         Text(
                             text = "标题（可选）",
                             style = MaterialTheme.typography.titleLarge.copy(fontFamily = contentFamily),
-                            color = MaterialTheme.colorScheme.outline,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     innerTextField()
                 },
             )
 
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 12.dp),
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp)
+                    .height(1.dp)
+                    .doodleDivider(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.22f),
+                        seed = 12,
+                    ),
             )
 
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -493,7 +532,10 @@ fun EditorScreen(
                                     .onFocusChanged { if (it.isFocused) focusedBlockId = block.id },
                                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                                     color = MaterialTheme.colorScheme.onSurface,
-                                    lineHeight = 26.sp,
+                                    // 17sp / 30sp：中文正文在这个行高下读着最不挤，和 36dp 的横线也还算协调
+                                    fontSize = 17.sp,
+                                    lineHeight = 30.sp,
+                                    letterSpacing = 0.1.sp,
                                     fontFamily = contentFamily,
                                 ),
                                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
@@ -504,7 +546,7 @@ fun EditorScreen(
                                             style = MaterialTheme.typography.bodyLarge.copy(
                                                 fontFamily = contentFamily,
                                             ),
-                                            color = MaterialTheme.colorScheme.outline,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
                                     }
                                     innerTextField()
@@ -567,17 +609,39 @@ fun EditorScreen(
             onDismissRequest = {},
             properties = PopupProperties(focusable = false),
         ) {
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = MaterialTheme.colorScheme.inverseSurface,
-                shadowElevation = 6.dp,
+            // 出现时从 0.85 弹到 1，走一点点 spring；消失就直接淡出
+            val visible = remember { MutableTransitionState(false).apply { targetState = true } }
+            AnimatedVisibility(
+                visibleState = visible,
+                enter = fadeIn(tween(130)) + scaleIn(
+                    initialScale = 0.85f,
+                    animationSpec = spring(dampingRatio = 0.55f, stiffness = 600f),
+                ),
+                exit = fadeOut(tween(120)) + scaleOut(targetScale = 0.92f, animationSpec = tween(120)),
             ) {
-                Text(
-                    text = "✓ 已收好",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.inverseOnSurface,
-                    modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp),
-                )
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.inverseSurface,
+                    shadowElevation = 6.dp,
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 11.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = DoodleCheckIcon,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp),
+                            tint = MaterialTheme.colorScheme.inverseOnSurface,
+                        )
+                        Spacer(Modifier.width(7.dp))
+                        Text(
+                            text = "已收好",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.inverseOnSurface,
+                        )
+                    }
+                }
             }
         }
     }
@@ -633,12 +697,12 @@ fun EditorScreen(
     }
 
     if (confirmDelete) {
-        AlertDialog(
+        DoodleDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text("删除这条记录？") },
             text = { Text("会先进回收站，暂时还能找回。") },
             confirmButton = {
-                TextButton(
+                DoodleTextButton(
                     onClick = {
                         confirmDelete = false
                         viewModel.delete(onBack)
@@ -646,7 +710,7 @@ fun EditorScreen(
                 ) { Text("删除") }
             },
             dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) { Text("取消") }
+                DoodleTextButton(onClick = { confirmDelete = false }) { Text("取消") }
             },
         )
     }
@@ -682,7 +746,7 @@ private fun MoodRow(selected: String?, onSelect: (String) -> Unit) {
                     .clickable { onSelect(mood.emoji) },
                 contentAlignment = Alignment.Center,
             ) {
-                Text(text = mood.emoji, fontSize = 18.sp)
+                MoodIcon(mood = mood, size = 27.dp)
             }
         }
     }
@@ -702,22 +766,23 @@ private fun TagRow(
         contentPadding = PaddingValues(0.dp),
     ) {
         items(tags, key = { it.id }) { tag ->
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(50))
-                    .clickable { onRemove(tag.id) },
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .doodleBorder(
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.25f),
+                        corner = 50.dp,
+                        width = 1.1.dp,
+                        seed = tag.id.toInt(),
+                    )
+                    .clickable { onRemove(tag.id) }
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(text = tag.name, style = MaterialTheme.typography.labelMedium)
-                    Spacer(Modifier.width(4.dp))
-                    Text(text = "×", style = MaterialTheme.typography.labelMedium)
-                }
+                Text(text = tag.name, style = MaterialTheme.typography.labelMedium)
+                Spacer(Modifier.width(4.dp))
+                Text(text = "×", style = MaterialTheme.typography.labelMedium)
             }
         }
         item(key = "add") {
@@ -749,7 +814,7 @@ private fun TagDialog(
 ) {
     var input by remember { mutableStateOf("") }
 
-    AlertDialog(
+    DoodleDialog(
         onDismissRequest = onDismiss,
         title = { Text("标签") },
         text = {
@@ -792,12 +857,12 @@ private fun TagDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            DoodleTextButton(
                 onClick = { if (input.isNotBlank()) onCreate(input.trim()) else onDismiss() },
             ) { Text(if (input.isNotBlank()) "添加" else "完成") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("关闭") }
+            DoodleTextButton(onClick = onDismiss) { Text("关闭") }
         },
     )
 }
@@ -812,23 +877,36 @@ private fun EditorToolbar(
     onDelete: () -> Unit,
 ) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainer, tonalElevation = 2.dp) {
+        Column {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .doodleDivider(
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f),
+                    seed = 6,
+                ),
+        )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
                 .padding(vertical = 4.dp),
         ) {
-            ToolbarItem("图片", onInsertImage, Modifier.weight(1f))
+            ToolbarItem("图片", DoodleImageIcon, onInsertImage, Modifier.weight(1f))
             ToolbarItem(
                 label = "横线",
+                icon = DoodleLinesIcon,
                 onClick = onToggleLines,
                 modifier = Modifier.weight(1f),
-                // 关掉时用灰色；工具栏现在 5 项，不再用"开/关"后缀占宽度
+                // 关掉时用灰色；打开时用主色，一眼能看出状态
                 muted = !linesOn,
+                active = linesOn,
             )
-            ToolbarItem("字体", onFont, Modifier.weight(1f))
-            ToolbarItem("背景", onBackground, Modifier.weight(1f))
-            ToolbarItem("删除", onDelete, Modifier.weight(1f), error = true)
+            ToolbarItem("字体", DoodleTextIcon, onFont, Modifier.weight(1f))
+            ToolbarItem("背景", DoodlePaletteIcon, onBackground, Modifier.weight(1f))
+            ToolbarItem("删除", DoodleTrashIcon, onDelete, Modifier.weight(1f), error = true)
+        }
         }
     }
 }
@@ -836,26 +914,51 @@ private fun EditorToolbar(
 @Composable
 private fun ToolbarItem(
     label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     error: Boolean = false,
     muted: Boolean = false,
+    active: Boolean = false,
 ) {
-    Box(
+    val tint = when {
+        error -> MaterialTheme.colorScheme.error
+        active -> MaterialTheme.colorScheme.primary
+        muted -> MaterialTheme.colorScheme.outline
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    // 横线这类"开关型"工具，打开时在图标后面垫一个药丸，和底部 tab 的选中态呼应
+    val pillColor by androidx.compose.animation.animateColorAsState(
+        targetValue = if (active) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+        animationSpec = tween(200),
+        label = "toolbar-pill",
+    )
+    Column(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
-            .padding(vertical = 10.dp),
-        contentAlignment = Alignment.Center,
+            .padding(vertical = 7.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(50))
+                .background(pillColor)
+                .padding(horizontal = 9.dp, vertical = 2.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = tint,
+                modifier = Modifier.size(21.dp),
+            )
+        }
+        Spacer(Modifier.height(3.dp))
         Text(
             text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = when {
-                error -> MaterialTheme.colorScheme.error
-                muted -> MaterialTheme.colorScheme.outline
-                else -> MaterialTheme.colorScheme.onSurface
-            },
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+            color = tint,
         )
     }
 }
@@ -869,10 +972,11 @@ private fun FontPickerDialog(
     onDismiss: () -> Unit,
 ) {
     val customFiles = remember(store) { store.list() }
-    AlertDialog(
+    DoodleDialog(
         onDismissRequest = onDismiss,
         title = { Text("正文字体") },
         text = {
+            GlassDialogBlur()
             Column(
                 modifier = Modifier
                     .heightIn(max = 460.dp)
@@ -881,7 +985,7 @@ private fun FontPickerDialog(
                 Text(
                     text = "只改这条日记的正文；界面本身仍用手机系统字体。",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(8.dp))
 
@@ -913,10 +1017,10 @@ private fun FontPickerDialog(
                 }
 
                 Spacer(Modifier.height(6.dp))
-                TextButton(onClick = onImport) { Text("＋ 导入字体（ttf / otf）") }
+                DoodleTextButton(onClick = onImport) { Text("＋ 导入字体（ttf / otf）") }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("完成") } },
+        confirmButton = { DoodleTextButton(onClick = onDismiss) { Text("完成") } },
     )
 }
 
@@ -960,7 +1064,7 @@ private fun BackgroundPicker(
     val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     val previewPattern = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.22f)
 
-    AlertDialog(
+    DoodleDialog(
         onDismissRequest = onDismiss,
         title = { Text("纸张") },
         text = {
@@ -1028,12 +1132,12 @@ private fun BackgroundPicker(
                 Text(
                     text = "自定义会铺一层淡色蒙版，保证字能看清",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("完成") }
+            DoodleTextButton(onClick = onDismiss) { Text("完成") }
         },
     )
 }

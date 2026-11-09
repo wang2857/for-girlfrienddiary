@@ -13,9 +13,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import com.synn.diary.ui.components.DoodleTextButton
+import com.synn.diary.ui.components.DoodleLockIcon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -184,8 +186,8 @@ private fun WelcomeStep(onStart: () -> Unit, onSkip: () -> Unit) {
             )
         }
         Spacer(Modifier.height(6.dp))
-        TextButton(onClick = onSkip) {
-            Text("以后再说", color = MaterialTheme.colorScheme.outline)
+        DoodleTextButton(onClick = onSkip) {
+            Text("以后再说", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -201,7 +203,12 @@ private fun PinStep(
     onDelete: () -> Unit,
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
-        Text(text = "🔒", fontSize = 36.sp)
+        Icon(
+            imageVector = DoodleLockIcon,
+            contentDescription = null,
+            modifier = Modifier.size(38.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
         Spacer(Modifier.height(10.dp))
         Text(text = title, style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(6.dp))
@@ -321,7 +328,7 @@ private fun FingerprintStep(onEnable: () -> Unit, onSkip: () -> Unit) {
             )
         }
         Spacer(Modifier.height(6.dp))
-        TextButton(onClick = onSkip) {
+        DoodleTextButton(onClick = onSkip) {
             Text("只用密码", color = MaterialTheme.colorScheme.outline)
         }
     }

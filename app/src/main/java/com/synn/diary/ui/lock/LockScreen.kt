@@ -16,9 +16,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import com.synn.diary.ui.components.DoodleTextButton
+import com.synn.diary.ui.components.DoodleLockIcon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -202,11 +204,11 @@ private fun FingerprintPanel(
             text = hint ?: "也可以点下面的按钮改用密码",
             style = MaterialTheme.typography.bodySmall,
             color = if (hint != null) MaterialTheme.colorScheme.error
-            else MaterialTheme.colorScheme.outline,
+            else MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(28.dp))
-        TextButton(onClick = onUsePin) { Text("用密码") }
+        DoodleTextButton(onClick = onUsePin) { Text("用密码") }
     }
 }
 
@@ -222,7 +224,12 @@ private fun PinPanel(
     onForgot: () -> Unit,
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("🔒", fontSize = 40.sp)
+        Icon(
+            imageVector = DoodleLockIcon,
+            contentDescription = null,
+            modifier = Modifier.size(42.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
         Spacer(Modifier.height(12.dp))
         Text("日记已锁定", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(4.dp))
@@ -230,7 +237,7 @@ private fun PinPanel(
             text = hint ?: if (error) "密码不对，再试一次" else "输入 4 位密码",
             style = MaterialTheme.typography.bodySmall,
             color = if (error || hint != null) MaterialTheme.colorScheme.error
-            else MaterialTheme.colorScheme.outline,
+            else MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Spacer(Modifier.height(24.dp))
@@ -270,11 +277,11 @@ private fun PinPanel(
         }
 
         Spacer(Modifier.height(10.dp))
-        TextButton(onClick = onForgot) {
+        DoodleTextButton(onClick = onForgot) {
             Text(
                 text = "忘记密码？",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
