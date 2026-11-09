@@ -61,15 +61,18 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
             .clip(RoundedCornerShape(20.dp))
             .clickable(onClick = onClick),
         // 卡片底色跟着心情走：一眼扫下去能看出这段时间的情绪分布。
-        // 深色模式下调高一点，否则心情色会被深底吃掉、看起来发灰。
-        colors = if (mood != null) {
-            CardDefaults.cardColors(
-                // 深色底太黑，22% 几乎看不出色相；提到 28%，配上面 0.35 的提亮，最差对比度仍有 5.2:1
-                containerColor = mood.color.copy(alpha = if (dark) 0.28f else 0.16f),
-            )
-        } else {
-            CardDefaults.cardColors()
-        },
+        // 直接用 surfaceVariant 做底再往心情色混合——不要依赖 surfaceContainer* 这类角色，
+        // 动态取色关掉时那套角色是 M3 默认的紫灰，卡片会发紫。
+        colors = CardDefaults.cardColors(
+            containerColor = mood?.let { m ->
+                lerp(
+                    MaterialTheme.colorScheme.surfaceVariant,
+                    m.color,
+                    // 深色底太黑，16% 看不出色相；深色给 28%，配 0.35 的提亮，最差对比度仍有 5.2:1
+                    if (dark) 0.28f else 0.16f,
+                )
+            } ?: MaterialTheme.colorScheme.surfaceVariant,
+        ),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // —— 抬头：日期是主信息，其余附注降级成一行小字 ——

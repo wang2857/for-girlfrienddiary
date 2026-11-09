@@ -204,6 +204,30 @@ fun SettingsScreen(
         ) {
             Spacer(Modifier.height(8.dp))
             Text(
+                text = "外观",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(Modifier.height(4.dp))
+
+            // 只有 Android 12+ 才有 Material You 取色；更老的系统没这个选项
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                SettingSwitchRow(
+                    title = "跟随系统取色",
+                    subtitle = "用壁纸配色；关掉就用纸感米白 + 墨绿",
+                    checked = container.appearanceSettings.dynamicColor,
+                    onCheckedChange = { container.appearanceSettings.setDynamicColorEnabled(it) },
+                )
+            } else {
+                Text(
+                    text = "纸感配色（Android 12 起可以跟随壁纸取色）",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+            Text(
                 text = "安全",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,

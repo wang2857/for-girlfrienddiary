@@ -22,12 +22,20 @@ private val LightColors = lightColorScheme(
     onPrimary = Color.White,
     primaryContainer = Color(0xFFC6E8D9),
     onPrimaryContainer = Color(0xFF0C1F18),
+    secondaryContainer = Color(0xFFDCE9DF),
+    onSecondaryContainer = Color(0xFF1B3A2D),
     surface = Color(0xFFFBF8F3),
     background = Color(0xFFFBF8F3),
     onSurface = Color(0xFF1B1C1A),
     surfaceVariant = Color(0xFFEDE7DE),
     onSurfaceVariant = Color(0xFF4A4A44),
     outline = Color(0xFFB9B2A6),
+    // M3 的容器色默认是紫灰的，纸感配色要自己补齐，否则关掉动态取色后卡片会发紫
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFFDFAF4),
+    surfaceContainer = Color(0xFFF6F1E7),
+    surfaceContainerHigh = Color(0xFFF0EADE),
+    surfaceContainerHighest = Color(0xFFEAE3D6),
 )
 
 private val DarkColors = darkColorScheme(
@@ -35,12 +43,19 @@ private val DarkColors = darkColorScheme(
     onPrimary = Color(0xFF0C1F18),
     primaryContainer = Color(0xFF2A4A3F),
     onPrimaryContainer = Color(0xFFC6E8D9),
+    secondaryContainer = Color(0xFF2B3A31),
+    onSecondaryContainer = Color(0xFFD6E7DA),
     surface = Color(0xFF14150F),
     background = Color(0xFF14150F),
     onSurface = Color(0xFFE5E2DC),
     surfaceVariant = Color(0xFF2C2C27),
     onSurfaceVariant = Color(0xFFC8C5BD),
     outline = Color(0xFF6E6E64),
+    surfaceContainerLowest = Color(0xFF0F100B),
+    surfaceContainerLow = Color(0xFF191A13),
+    surfaceContainer = Color(0xFF1E1F17),
+    surfaceContainerHigh = Color(0xFF25261D),
+    surfaceContainerHighest = Color(0xFF2C2D24),
 )
 
 /** 统一圆角与字体：日记类应用要"纸感"，所以不用默认的 M3 圆角梯度。 */

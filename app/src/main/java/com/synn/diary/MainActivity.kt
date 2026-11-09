@@ -50,7 +50,8 @@ class MainActivity : FragmentActivity() {
         installPrivacyCover()
 
         setContent {
-            DiaryTheme {
+            // 读 mutableState：设置里一关"跟随系统取色"，这里立刻重组
+            DiaryTheme(dynamicColor = container.appearanceSettings.dynamicColor) {
                 val locked by container.lockManager.locked.collectAsStateWithLifecycle()
                 val lockEnabled by container.lockManager.enabled.collectAsStateWithLifecycle()
                 val allowScreenshots by container.lockManager.allowScreenshots.collectAsStateWithLifecycle()
