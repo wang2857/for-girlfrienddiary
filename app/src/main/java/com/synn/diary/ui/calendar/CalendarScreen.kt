@@ -24,7 +24,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -77,7 +76,8 @@ fun CalendarScreen(
     val selectedDay by viewModel.selectedDay.collectAsStateWithLifecycle()
     val dayEntries by viewModel.dayEntries.collectAsStateWithLifecycle()
 
-    val today = remember { LocalDate.now().toEpochDay() }
+    // 每次重组都重新取：跨午夜回到 App 时"今天"不会停在昨天
+    val today = LocalDate.now().toEpochDay()
     var showMonthPicker by remember { mutableStateOf(false) }
     // 已经在本月、且选中的就是今天：按钮淡下去表示"已在家"
     val atToday = month == YearMonth.now() && selectedDay == today

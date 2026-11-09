@@ -34,7 +34,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.Icons
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.spring
@@ -43,11 +42,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -118,7 +113,6 @@ import com.synn.diary.ui.components.DoodleCheckIcon
 import com.synn.diary.ui.components.doodleDivider
 import com.synn.diary.ui.components.DoodleBackIcon
 import com.synn.diary.ui.components.GlassDialogBlur
-import com.synn.diary.ui.components.LocalGlassEffect
 import com.synn.diary.ui.components.DoodleImageIcon
 import com.synn.diary.ui.components.DoodlePaletteIcon
 import com.synn.diary.ui.components.DoodleLinesIcon
