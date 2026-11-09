@@ -3,6 +3,7 @@ package com.synn.diary.ui.components
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -71,35 +72,44 @@ private fun TabItem(
     modifier: Modifier = Modifier,
 ) {
     val selected = currentRoute == route
+    // 药丸指示器：选中时从透明淡出成主色浅底，宽度跟着内边距一起长大
+    val pill by animateFloatAsState(
+        targetValue = if (selected) 1f else 0f,
+        animationSpec = tween(240),
+        label = "tab-pill",
+    )
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
             .clickable { onSelect(route) }
-            .padding(vertical = 8.dp),
+            .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // 选中时一条"墨迹"横线，从 8dp 涨到 18dp；没选中就缩成一个小点
-        val ink by animateFloatAsState(
-            targetValue = if (selected) 1f else 0f,
-            animationSpec = tween(220),
-            label = "tab-ink",
-        )
         Box(
             modifier = Modifier
-                .height(3.dp)
-                .width((8 + 10 * ink).dp)
-                .clip(CircleShape)
+                .clip(RoundedCornerShape(50))
                 .background(
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.25f + 0.75f * ink),
+                    lerp(
+                        Color.Transparent,
+                        MaterialTheme.colorScheme.primaryContainer,
+                        pill,
+                    ),
+                )
+                .padding(
+                    horizontal = (12 + 8 * pill).dp,
+                    vertical = (7 + 1 * pill).dp,
                 ),
-        )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-            color = if (selected) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                color = lerp(
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                    MaterialTheme.colorScheme.onPrimaryContainer,
+                    pill,
+                ),
+            )
+        }
     }
 }

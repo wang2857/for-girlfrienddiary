@@ -909,6 +909,12 @@ private fun ToolbarItem(
         muted -> MaterialTheme.colorScheme.outline
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
+    // 横线这类"开关型"工具，打开时在图标后面垫一个药丸，和底部 tab 的选中态呼应
+    val pillColor by androidx.compose.animation.animateColorAsState(
+        targetValue = if (active) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+        animationSpec = tween(200),
+        label = "toolbar-pill",
+    )
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
@@ -916,12 +922,20 @@ private fun ToolbarItem(
             .padding(vertical = 7.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = tint,
-            modifier = Modifier.size(21.dp),
-        )
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(50))
+                .background(pillColor)
+                .padding(horizontal = 9.dp, vertical = 2.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = tint,
+                modifier = Modifier.size(21.dp),
+            )
+        }
         Spacer(Modifier.height(3.dp))
         Text(
             text = label,
