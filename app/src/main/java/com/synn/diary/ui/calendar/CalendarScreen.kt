@@ -37,6 +37,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import com.synn.diary.ui.components.DoodleDialog
+import com.synn.diary.ui.components.doodleBorder
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -89,6 +90,7 @@ fun CalendarScreen(
                 onPrevious = viewModel::previousMonth,
                 onNext = viewModel::nextMonth,
                 onTitleClick = { showMonthPicker = true },
+                onToday = viewModel::goToToday,
             )
 
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
@@ -163,6 +165,7 @@ private fun MonthBar(
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     onTitleClick: () -> Unit,
+    onToday: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -192,6 +195,27 @@ private fun MonthBar(
                 .clickable(onClick = onNext)
                 .padding(horizontal = 14.dp, vertical = 8.dp),
         ) { Text("›", style = MaterialTheme.typography.titleLarge) }
+
+        // 回到今天：手绘小药丸，切走几个月后一眼能找到回家的路
+        Box(
+            modifier = Modifier
+                .padding(start = 2.dp)
+                .clip(RoundedCornerShape(50))
+                .doodleBorder(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                    corner = 50.dp,
+                    width = 1.1.dp,
+                    seed = 21,
+                )
+                .clickable(onClick = onToday)
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+        ) {
+            Text(
+                text = "今天",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
     }
 }
 
