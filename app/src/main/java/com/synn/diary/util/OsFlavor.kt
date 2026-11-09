@@ -12,8 +12,9 @@ import android.os.Build
 object OsFlavor {
 
     val isVivo: Boolean by lazy {
-        val brand = Build.BRAND.lowercase()
-        val manufacturer = Build.MANUFACTURER.lowercase()
+        // 单元测试跑在 JVM 上时 Build.BRAND 可能是 null
+        val brand = Build.BRAND?.lowercase().orEmpty()
+        val manufacturer = Build.MANUFACTURER?.lowercase().orEmpty()
         brand == "vivo" || brand == "iqoo" || manufacturer == "vivo"
     }
 
