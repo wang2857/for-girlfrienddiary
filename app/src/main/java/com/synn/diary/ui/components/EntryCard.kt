@@ -52,8 +52,8 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
     // 按明暗往黑/白方向压一档，保留色相但保证能读。
     val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     val accent = mood?.let { m ->
-        // 深色下多往白里提一点：底色叠了 28% 的心情色，不提亮会压到 4.6:1 以下
-        lerp(m.color, if (dark) Color.White else Color.Black, if (dark) 0.35f else 0.3f)
+        // 底色心情色更浓了（浅 30% / 深 34%），日期文字跟着加深，保证 4.8:1 以上
+        lerp(m.color, if (dark) Color.White else Color.Black, if (dark) 0.45f else 0.65f)
     }
 
     // 卡片底色跟着心情走；描边是手绘的，不用 Material 的 Card（它的边太"机"）
@@ -61,7 +61,7 @@ fun EntryCard(item: EntryWithTags, onClick: () -> Unit) {
         lerp(
             MaterialTheme.colorScheme.surfaceVariant,
             m.color,
-            if (dark) 0.28f else 0.16f,
+            if (dark) 0.34f else 0.30f,
         )
     } ?: MaterialTheme.colorScheme.surfaceVariant
     val inkLine = MaterialTheme.colorScheme.onSurface.copy(alpha = if (dark) 0.30f else 0.24f)
