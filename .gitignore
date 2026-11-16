@@ -8,7 +8,7 @@ build/
 captures/
 .externalNativeBuild/
 .cxx/
-# 产物按版本归档在 dist/，但 APK 体积大，不进版本库；
-# 校验值与说明见 ARCHIVE.md
-*.apk
+# 产物按版本归档在 dist/，随版本一起入库——仓库拎走就能直接装；
+# 代价是历史会变重（每个版本约 +40 MB），校验值见 dist/SHA256SUMS
+# 构建中间产物仍在上面排除（build/ 等）；aab 不产出，继续挡掉
 *.aab

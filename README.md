@@ -176,11 +176,24 @@ cd diary
 - **关掉 R8**（`isMinifyEnabled = false`）：Room / Coil 的反射在混淆下有踩坑风险，个人用不值得冒险
 
 ```bash
-adb install -r dist/日记-1.0.4-debug.apk     # 调试版升级
-adb install -r dist/日记-1.0.4-release.apk   # 正式版升级（同一个 key 才能 -r）
+adb install -r dist/日记-1.1.0-debug.apk     # 调试版升级
+adb install -r dist/日记-1.1.0-release.apk   # 正式版升级（同一个 key 才能 -r）
 ```
 
 `allowBackup=false` + `dataExtractionRules` 全排除，所以**卸载重装会清空**。
+
+### 归档
+
+`dist/` 里的东西随版本一起入库（`.gitignore` 只挡 `build/` 之类的中间产物），所以仓库拎走就能装。
+每个版本的产物 + 校验值：
+
+```bash
+./scripts/archive.sh            # 按当前 HEAD 重打源码包，刷新 dist/SHA256SUMS
+./scripts/archive.sh --verify   # 校验 dist/ 里现有产物是否对得上
+```
+
+源码包走 `git archive`，不含 `.git` / `build/` / `dist/`，同一个 commit 重打字节一致。
+更细的批次记录见 [ARCHIVE.md](ARCHIVE.md)。
 
 ---
 
