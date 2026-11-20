@@ -2,7 +2,7 @@
 
 安卓本地日记 App。只为自己用：不上架、不联网、数据全在手机上。
 
-仓库：<https://github.com/wang2857/for-girlfrienddiary> ｜ 许可证：MIT
+仓库：<https://github.com/wang2857/for-girlfrienddiary> ｜ 许可证：MIT ｜ CI：[![CI](https://github.com/wang2857/for-girlfrienddiary/actions/workflows/ci.yml/badge.svg)](https://github.com/wang2857/for-girlfrienddiary/actions/workflows/ci.yml)
 
 **当前版本 1.1.1（手绘改版，MIT 开源）** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
 ｜ 数据库 v9 ｜ 变更历史见 [CHANGELOG.md](CHANGELOG.md) ｜ 存档信息见 [ARCHIVE.md](ARCHIVE.md)
@@ -448,7 +448,7 @@ primaryCpuAbi=arm64-v8a   secondaryCpuAbi=null  ← 纯 64 位运行
 
 - 崩溃日志只覆盖 Java/Kotlin 未捕获异常：native crash、ANR、被系统杀进程都不留文件
   （真要补，下一步是 `ApplicationExitInfo`，能拿到系统的 ANR / 低内存记录）
-- 单测覆盖纯逻辑与数据库（38 个用例），流程类（编辑、锁屏、备份对话）仍靠手测
+- 单测覆盖纯逻辑与数据库（41 个用例），流程类（编辑、锁屏、备份对话）仍靠手测
 - CI 在 GitHub Actions 上跑（单测 → lint → 编译仪器测试 → 构建 + 64 位自检）
 - `docs/` 里的截图是逐个功能加的，风格不完全统一
 

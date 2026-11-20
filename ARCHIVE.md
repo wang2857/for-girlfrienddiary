@@ -47,7 +47,7 @@ SHA-256 只记在本地 `dist/SHA256SUMS`：源码包会把自己打进自己，
 - 源码包内容 = `git archive HEAD`（已提交的文件），含 `app/`、`app/schemas/`、`docs/`、
   `README.md` / `CHANGELOG.md` / `ARCHIVE.md` / `gradle*` / `.github/`
 - `keystore/` 是**故意入库**的：`release.keystore` + `release.properties` 丢了，已装的正式版就再也升不了级
-- 测试：JVM 38 个用例、Robolectric 4 个、仪器测试 **12 个**（含 8 个 Compose UI 测试）
+- 测试：JVM 41 个用例（含 Robolectric）、仪器测试 **12 个**（含 8 个 Compose UI 测试）
 - CI：`.github/workflows/ci.yml`（单测 → lint → 编译仪器测试 → 构建 + 64 位自检）；仓库无远端，推上去才跑
 
 ## 重新打包 / 再归档
