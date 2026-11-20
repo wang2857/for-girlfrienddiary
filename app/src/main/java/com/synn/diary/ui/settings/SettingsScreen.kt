@@ -20,6 +20,7 @@ import com.synn.diary.data.backup.AutoBackup
 import com.synn.diary.data.backup.AutoBackupScheduler
 import com.synn.diary.notify.DailyReminder
 import com.synn.diary.notify.ReminderScheduler
+import com.synn.diary.R
 import com.synn.diary.ui.lock.RecoveryCodeDialog
 import com.synn.diary.ui.lock.VerifyPinDialog
 import com.synn.diary.util.CrashLog
@@ -112,6 +113,7 @@ fun SettingsScreen(
     var hasRecovery by remember { mutableStateOf(lockManager.hasRecoveryCode()) }
     var canRevealRecovery by remember { mutableStateOf(lockManager.canRevealRecoveryCode()) }
     var showCrashLog by remember { mutableStateOf(false) }
+    var showLicenses by remember { mutableStateOf(false) }
     // 每次进设置页重新扫一遍：闪退之后重开应用，这里才拿得到上一次的记录
     var crashFiles by remember { mutableStateOf(CrashLog.files(context)) }
     androidx.compose.runtime.LaunchedEffect(Unit) {
@@ -529,9 +531,16 @@ fun SettingsScreen(
             DoodleSectionTitle("关于")
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "日记 ${appVersion(context)} · 本地存储 · 不上传",
+                text = "日记 ${appVersion(context)} · MIT 许可 · 本地存储 · 不上传",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            SettingActionRow(
+                title = "开源许可",
+                subtitle = "MIT 许可证 · 第三方组件 · 霞鹜文楷 OFL-1.1",
+                actionLabel = "查看",
+                onClick = { showLicenses = true },
             )
 
             SettingActionRow(
@@ -718,6 +727,20 @@ fun SettingsScreen(
         )
     }
 
+    if (showLicenses) {
+        LicensesDialog(
+            // 许可全文在 res/raw/licenses.txt，跟着 APK 走，不依赖网络
+            text = remember {
+                runCatching {
+                    context.resources.openRawResource(R.raw.licenses)
+                        .bufferedReader()
+                        .use { it.readText() }
+                }.getOrDefault("许可文本读取失败")
+            },
+            onDismiss = { showLicenses = false },
+        )
+    }
+
     if (showDisableConfirm) {
         DoodleDialog(
             onDismissRequest = { showDisableConfirm = false },
@@ -854,6 +877,27 @@ private fun CrashLogDialog(
                 DoodleTextButton(onClick = onDismiss) { Text("关闭") }
             }
         },
+    )
+}
+
+@Composable
+private fun LicensesDialog(
+    text: String,
+    onDismiss: () -> Unit,
+) {
+    DoodleDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("开源许可") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                Text(text = text, style = MaterialTheme.typography.bodySmall)
+            }
+        },
+        confirmButton = { DoodleTextButton(onClick = onDismiss) { Text("关闭") } },
     )
 }
 

@@ -2,7 +2,9 @@
 
 安卓本地日记 App。只为自己用：不上架、不联网、数据全在手机上。
 
-**当前版本 1.1.0（手绘改版，调试包 + 正式签名包）** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
+仓库：<https://github.com/wang2857/for-girlfrienddiary> ｜ 许可证：MIT
+
+**当前版本 1.1.1（手绘改版，MIT 开源）** ｜ 包名 `com.synn.diary`（正式）/ `com.synn.diary.debug`（调试）｜ 纯 64 位
 ｜ 数据库 v9 ｜ 变更历史见 [CHANGELOG.md](CHANGELOG.md) ｜ 存档信息见 [ARCHIVE.md](ARCHIVE.md)
 
 ---
@@ -16,6 +18,7 @@
 - [4. vivo 适配](#4-vivo-适配)
 - [5. 验证记录](#5-验证记录)
 - [6. 已知欠账](#6-已知欠账)
+- [7. 开源与许可](#7-开源与许可)
 
 ---
 
@@ -165,27 +168,29 @@ cd diary
 | | debug（日常） | release（正式） |
 |---|---|---|
 | 包名 | `com.synn.diary.debug` | `com.synn.diary` |
-| 签名 | `keystore/debug.keystore` | `keystore/release.keystore`（RSA 4096） |
+| 签名 | `keystore/debug.keystore`（入库） | 自备（RSA 4096，不入库） |
 | 体积 | 约 21 MB | 约 17 MB |
 | 数据 | 独立 | 独立 |
 
-- 正式签名材料在 `keystore/release.keystore` + `keystore/release.properties`（密码在里面）。
-  **这两个文件丢了，已装的正式版就再也升不了级**，务必单独备份
+- 仓库里**没有**正式签名材料（公开仓库放私钥等于公开升级凭据）。自己发布时把
+  `keystore/release.properties.example` 复制成 `keystore/release.properties`，配上自己的 keystore；
+  没有这份配置时 `assembleRelease` 会回落到调试签名，照样能构建
+- 你那套 `release.keystore` + `release.properties` **丢了，已装的正式版就再也升不了级**，务必单独备份
 - 两个包的数据不互通：要把调试版的数据搬到正式版，先在调试版设恢复码 → 导出备份 →
   在正式版用恢复码导入（普通"设备备份"不行，Keystore 不同解不开）
 - **关掉 R8**（`isMinifyEnabled = false`）：Room / Coil 的反射在混淆下有踩坑风险，个人用不值得冒险
 
 ```bash
-adb install -r dist/日记-1.1.0-debug.apk     # 调试版升级
-adb install -r dist/日记-1.1.0-release.apk   # 正式版升级（同一个 key 才能 -r）
+./build.sh assembleDebug
+adb install -r app/build/outputs/apk/debug/app-debug.apk      # 调试版升级
+adb install -r app/build/outputs/apk/release/app-release.apk  # 正式版升级（同一个 key 才能 -r）
 ```
 
 `allowBackup=false` + `dataExtractionRules` 全排除，所以**卸载重装会清空**。
 
 ### 归档
 
-`dist/` 里的东西随版本一起入库（`.gitignore` 只挡 `build/` 之类的中间产物），所以仓库拎走就能装。
-每个版本的产物 + 校验值：
+APK / 源码包不进仓库（公开仓库保持轻量，签名材料更不能进），只在本地 `dist/` 留一份，配 `SHA256SUMS`：
 
 ```bash
 ./scripts/archive.sh            # 按当前 HEAD 重打源码包，刷新 dist/SHA256SUMS
@@ -443,8 +448,27 @@ primaryCpuAbi=arm64-v8a   secondaryCpuAbi=null  ← 纯 64 位运行
 
 - 崩溃日志只覆盖 Java/Kotlin 未捕获异常：native crash、ANR、被系统杀进程都不留文件
   （真要补，下一步是 `ApplicationExitInfo`，能拿到系统的 ANR / 低内存记录）
-- 单测只覆盖纯逻辑（33 个用例）；数据库触发器、FTS 同步、备份导入、UI 流程还是靠手测
-- CI 只配了工作流文件，仓库还没有远端，推上去才会真正跑
+- 单测覆盖纯逻辑与数据库（38 个用例），流程类（编辑、锁屏、备份对话）仍靠手测
+- CI 在 GitHub Actions 上跑（单测 → lint → 编译仪器测试 → 构建 + 64 位自检）
 - `docs/` 里的截图是逐个功能加的，风格不完全统一
 
 产品层面的规划见仓库外的 `ANDROID-DIARY-PLAN.md`（已复制一份到 `docs/plan.md`）。
+
+---
+
+## 7. 开源与许可
+
+本项目以 **MIT 许可证**发布，全文见 [LICENSE](LICENSE)。
+
+| 文件 | 内容 |
+|---|---|
+| [LICENSE](LICENSE) | MIT 许可证全文（Copyright (c) 2026 Synn） |
+| [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) | 随 APK 分发的第三方组件、版本、许可证，以及开发期依赖 |
+| [LICENSE-OFL.txt](LICENSE-OFL.txt) | 霞鹜文楷（LXGW WenKai）的 SIL Open Font License 1.1 全文 |
+
+- 应用内同样能看：**设置 → 关于 → 开源许可**。文本打包在 `app/src/main/res/raw/licenses.txt`，
+  离线可看、跟着 APK 走
+- APK 里保留 androidx 各库的 `META-INF/androidx/**/LICENSE.txt`（只在打包时挡掉重复的 `AL2.0` / `LGPL2.1` 别名文件）
+- 你自己写的日记、导入的图片和字体都属于你，不在上面任何许可范围内
+- 仓库不含签名私钥：`keystore/release.keystore` 与 `keystore/release.properties` 被 gitignore 挡住，
+  只留公开的 `debug.keystore` 和一份 [keystore/release.properties.example](keystore/release.properties.example)

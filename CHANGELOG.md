@@ -593,3 +593,14 @@ APK 从 13 MB 涨到约 17 MB（字体占 3.4 MB）。
 - 用 `keystore/release.keystore`（RSA 4096）构建 `com.synn.diary` v1.1.0（versionCode 77）
 - 体积 17 MB，签名证书 SHA-256 `93:D2:B5:…:99:9C`，与 1.0.4 正式版同 key，可覆盖升级
 - 调试包与正式包数据独立；迁移数据走「恢复码 + 导出备份」
+
+## 1.1.1 — 开源信息
+
+- 项目以 **MIT 许可证**发布：新增 `LICENSE`、`THIRD-PARTY-NOTICES.md`、`LICENSE-OFL.txt`
+  （霞鹜文楷 OFL-1.1 全文），README 补「7. 开源与许可」
+- 设置 → 关于 → 新增「开源许可」：全文打包进 `app/src/main/res/raw/licenses.txt`，不联网也能看
+- 打包规则只挡 `META-INF/{AL2.0,LGPL2.1}` 这类重复别名，androidx 各库的 `LICENSE.txt` 保留在 APK 内
+- 仓库不再收正式签名材料：`keystore/release.keystore` 与 `release.properties` 进 `.gitignore`，
+  另留 `keystore/release.properties.example` 模板；`debug.keystore` 保留，clone 下来可直接构建
+- git 历史已重写，剔除签名材料与 APK/源码 zip（准备公开托管）
+- versionCode 78

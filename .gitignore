@@ -8,7 +8,13 @@ build/
 captures/
 .externalNativeBuild/
 .cxx/
-# 产物按版本归档在 dist/，随版本一起入库——仓库拎走就能直接装；
-# 代价是历史会变重（每个版本约 +40 MB），校验值见 dist/SHA256SUMS
-# 构建中间产物仍在上面排除（build/ 等）；aab 不产出，继续挡掉
+
+# 正式签名材料不入库：公开仓库里放私钥等于把升级凭据公开。
+# 只留 debug.keystore（公开的调试密钥，谁都能生成，不敏感），保证 clone 下来能直接 assembleDebug。
+# 自己发布正式包时，按 keystore/release.properties.example 填一份 release.properties。
+keystore/release.keystore
+keystore/release.properties
+
+# 构建产物不入库，仓库保持轻量：dist/ 整个目录只留本机，哈希记录见 ARCHIVE.md
+dist/
 *.aab

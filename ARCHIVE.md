@@ -1,27 +1,30 @@
 # 存档记录
 
-最近一次归档：**2026-11-16**（第 2 批）｜ 版本：**1.1.0（手绘改版）** ｜ versionCode **77** ｜ 数据库 **v9（SQLCipher + FTS5）** ｜ 纯 64 位（arm64-v8a）
+最近一次归档：**2026-11-20**（第 3 批）｜ 版本：**1.1.1（开源）** ｜ versionCode **78** ｜ 数据库 **v9（SQLCipher + FTS5）** ｜ 纯 64 位（arm64-v8a）
 
 > 1.1.0 = 1.0.4 之后在 `beautify` 分支上做的一整套视觉重做，已合回 `main`。
-> 正式包用 `keystore/release.keystore`（RSA 4096）签名，包名 `com.synn.diary`，和调试包可共存。
+> 1.1.1 = 加上 MIT 许可、第三方声明与应用内许可页，并把仓库整理成可公开托管（去掉私钥与产物）。
+> 正式包用自己的 `release.keystore`（RSA 4096）签名，包名 `com.synn.diary`，和调试包可共存。
 
 ## 归档批次
 
 | 批次 | 日期 | 版本 | tag | 形态 |
 |---|---|---|---|---|
 | 1 | 2026-11-09 | 1.1.0 | `v1.1.0` | 源码包入库；两个 APK 只在 `dist/`（已 gitignore） |
-| 2 | 2026-11-16 | 1.1.0 | `v1.1.0-archive` | **APK + 源码包全部入库**，仓库自带可安装产物 |
+| 2 | 2026-11-16 | 1.1.0 | `v1.1.0-archive` | 曾把 APK + 源码包一起入库，**第 3 批已撤销** |
+| 3 | 2026-11-20 | 1.1.1 | `v1.1.1` | MIT 开源；仓库只留源码，密钥与产物不入库、也不在历史里 |
 
-从第 2 批起仓库是自包含的：clone 出来就有源码、就有能直接 `adb install` 的包，不再依赖某台机器的
-`dist/` 目录。代价是 git 历史变重（每个版本约 +40 MB）。
+第 2 批把 40 MB APK 收进 git，会让公开仓库变重；第 3 批用 `git filter-branch` 重写了历史，
+把 `dist/` 和 `keystore/release.*` 从**所有**提交里剔除（本机文件照旧保留）。
 
-## 产物（`dist/`）
+## 产物（仅本机 `dist/`，不入库）
 
-| 文件 | 体积 | 说明 |
-|---|---|---|
-| `dist/日记-1.1.0-release.apk` | 17.2 MiB | 正式签名，`com.synn.diary`，装她手机用这个 |
-| `dist/日记-1.1.0-debug.apk` | 21.5 MiB | 调试签名，`com.synn.diary.debug`，日常开发用 |
-| `dist/日记-1.1.0-源码.zip` | 约 6.5 MB | 源码快照，不含 `.git` / `build/` / `dist/` |
+| 文件 | 说明 |
+|---|---|
+| `dist/<版本>-release.apk` | 正式签名，`com.synn.diary`，交付/装机用 |
+| `dist/<版本>-debug.apk` | 调试签名，`com.synn.diary.debug`，日常开发用 |
+| `dist/<版本>-源码.zip` | 源码快照，不含 `.git` / `build/` / `dist/` / 私钥 |
+| `dist/SHA256SUMS` | 上一批产物的校验值 |
 
 调试包 `com.synn.diary.debug`，正式包 `com.synn.diary`；两个是不同的应用，各自 `install -r`
 覆盖安装保数据，但**数据互不相通**（要搬数据走恢复码导出/导入）。
@@ -34,14 +37,14 @@ shasum -a 256 -c dist/SHA256SUMS     # 全部产物逐一对账
 ./scripts/archive.sh --verify        # 同一件事的封装
 ```
 
-SHA-256 不写在本文件里：源码包会把自己打进自己，写进去就自相矛盾。**唯一事实来源是
-`dist/SHA256SUMS`**（随版本入库）。
+SHA-256 只记在本地 `dist/SHA256SUMS`：源码包会把自己打进自己，写进去就自相矛盾；
+它也不再随仓库分发。
 
 ## 代码状态
 
-- `main`：1.1.0（tag `v1.1.0`，归档批 tag `v1.1.0-archive`），含 `beautify` 的全部改动（`--no-ff` 合并）
+- `main`：1.1.1（tag `v1.1.1`），含 `beautify` 的全部改动（`--no-ff` 合并）
 - `beautify`：保留在合并点，后续视觉调整可以继续在它上面做、再合回来
-- 源码包内容 = `git archive HEAD`（已提交的文件），含 `app/`、`app/schemas/`、`docs/`、`keystore/`、
+- 源码包内容 = `git archive HEAD`（已提交的文件），含 `app/`、`app/schemas/`、`docs/`、
   `README.md` / `CHANGELOG.md` / `ARCHIVE.md` / `gradle*` / `.github/`
 - `keystore/` 是**故意入库**的：`release.keystore` + `release.properties` 丢了，已装的正式版就再也升不了级
 - 测试：JVM 38 个用例、Robolectric 4 个、仪器测试 **12 个**（含 8 个 Compose UI 测试）

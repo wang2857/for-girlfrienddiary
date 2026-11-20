@@ -8,7 +8,7 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-// 正式签名信息放在 keystore/release.properties（不进公共备份，但要跟 keystore 一起保管）
+// 正式签名信息放在 keystore/release.properties（不入库，见 .gitignore；模板是 .example）
 val releaseSigning = Properties().apply {
     val file = rootProject.file("keystore/release.properties")
     if (file.exists()) file.inputStream().use { load(it) }
@@ -22,8 +22,8 @@ android {
         applicationId = "com.synn.diary"
         minSdk = 26
         targetSdk = 36
-        versionCode = 77
-        versionName = "1.1.0"
+        versionCode = 78
+        versionName = "1.1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -43,7 +43,8 @@ android {
             keyPassword = "android"
         }
 
-        // 正式包用自己的 RSA 4096 key；丢了就升不了级，所以 keystore 跟着仓库一起保管
+        // 正式包用自己的 RSA 4096 key；密钥只留本机，仓库里没有。
+        // 没放 release.properties 时 release 会回落到调试签名，照样能构建。
         if (releaseSigning.getProperty("storePassword") != null) {
             create("release") {
                 storeFile = rootProject.file(
@@ -96,6 +97,8 @@ android {
 
     packaging {
         resources {
+            // 只挡重复的许可证别名文件，别挡真正的许可正文：
+            // androidx 的 META-INF/androidx/**/LICENSE.txt 必须留在 APK 里
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }

@@ -1,0 +1,13 @@
+# 正式签名配置模板：复制成 keystore/release.properties 填好再 assembleRelease。
+# 这个文件本身不含任何密钥，可以进仓库；release.properties 和 release.keystore 不要提交。
+#
+# 生成一份自己的 key（口令自己定，别照抄示例）：
+#   keytool -genkeypair -v -keystore keystore/release.keystore -alias diary-release \
+#     -keyalg RSA -keysize 4096 -validity 10000
+#
+# 丢了 keystore + 口令，已经装出去的正式版就再也无法升级，只能卸载重装（数据会丢），务必单独备份。
+
+storeFile=release.keystore
+storePassword=在此填 keystore 口令
+keyAlias=diary-release
+keyPassword=在此填 key 口令
